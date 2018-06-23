@@ -1,5 +1,5 @@
 //
-// A minimal C++/SDL2/OpenGLES2 example that Emscripten can transpile into Javascript/WebGL.
+// Minimal C++/SDL2/OpenGLES2 sample that Emscripten transpiles into Javascript/WebGL.
 //
 // Setup:
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
@@ -11,9 +11,10 @@
 //     index.html
 //
 // Result:
-//     A colorful triangle. 
+//     A colorful triangle.  Left mouse pans, wheel zooms in/out.
 //
 #include <exception>
+#include <algorithm>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -26,13 +27,25 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
+SDL_Window* wnd;
+int wndWidth = 640, wndHeight = 480;
+bool mouseDown = false;
+
+// Uniforms - frame invariant shader vars
+GLint uniformPan, uniformZoom;
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f;
+
 // Vertex shader
 const GLchar* vertexSource =
+    "uniform vec2 pan;                             \n"
+    "uniform float zoom;                           \n"
     "attribute vec4 position;                      \n"
     "varying vec3 color;                           \n"
     "void main()                                   \n"
     "{                                             \n"
     "    gl_Position = vec4(position.xyz, 1.0);    \n"
+    "    gl_Position.xy += pan;                    \n"
+    "    gl_Position.xy *= zoom;                   \n"
     "    color = gl_Position.xyz + vec3(0.5);      \n"
     "}                                             \n";
 
@@ -45,17 +58,72 @@ const GLchar* fragmentSource =
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
-SDL_Window* wnd;
+float clamp (float val, float lo, float hi)
+{
+    return std::max(lo, std::min(val, hi));
+}
 
-void main_loop() 
-{    
-    // Check for events
+void handleEvents()
+{
+    // Handle events
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        if (event.type == SDL_QUIT) 
-            std::terminate();
+        switch (event.type)
+        {
+            case SDL_MOUSEMOTION: 
+            {
+                SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
+                if (mouseDown)
+                {
+                    // Normalize cursor position to -2.0 to 2.0 in x and y
+                    pan[0] = ((m->x / (float) wndWidth) - 0.5f) * 2.0f / zoom;
+                    pan[1] = ((1.0f - (m->y / (float) wndHeight)) - 0.5f) * 2.0f / zoom;
+                }
+                break;
+            }
+
+            case SDL_MOUSEBUTTONDOWN: 
+            {
+                SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
+                if (m->button == SDL_BUTTON_LEFT)
+                {
+                    mouseDown = true;
+
+                    // Push a motion event to update display at current mouse
+                    SDL_Event push_event;
+                    push_event.type = SDL_MOUSEMOTION;
+                    push_event.motion.x = m->x;
+                    push_event.motion.y = m->y;
+                    SDL_PushEvent(&push_event);                    
+                }
+                break;
+            }
+
+            case SDL_MOUSEBUTTONUP: 
+            {
+                SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
+                if (m->button == SDL_BUTTON_LEFT)
+                    mouseDown = false;
+                break;
+            }
+
+            case SDL_MOUSEWHEEL: 
+            {
+                SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
+                zoom += ((m->y < 0) ? -0.1f : 0.1f);
+                zoom = clamp(zoom, 0.0f, 10.0f);
+                break;
+            }
+        }
     }
+}
+
+void redraw()
+{
+    // Update uniforms
+	glUniform2fv(uniformPan, 1, pan);
+	glUniform1f(uniformZoom, zoom);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -68,11 +136,17 @@ void main_loop()
     SDL_GL_SwapWindow(wnd);
 }
 
+void main_loop() 
+{    
+    handleEvents();
+    redraw();
+}
+
 int main(int argc, char** argv)
 {
-    // Create SDL window with GL context
+    // Create SDL2 window with GL context
     wnd = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            1024, 768, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                            wndWidth, wndHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -97,6 +171,10 @@ int main(int argc, char** argv)
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
+
+    // Get uniform locations for updating later
+	uniformPan = glGetUniformLocation(shaderProgram, "pan");
+	uniformZoom = glGetUniformLocation(shaderProgram, "zoom");    
 
     // Create a vertex buffer object and copy the vertex data to it
     GLuint vbo;
