@@ -5,10 +5,10 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle.html
+//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle.js
 //
 // Run (open in browser):
-//     hello_triangle.html
+//     index.html
 //
 // Result:
 //     A colorful triangle. 
@@ -16,35 +16,25 @@
 #include <exception>
 
 #ifdef __EMSCRIPTEN__
-
 #include <emscripten.h>
 #include <SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL_opengles2.h>
-
 #else
-
 #include <SDL2/SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
-
 #endif
-
-// Shader variables
-GLint uniformPanX, uniformPanY, uniformZoom;
 
 // Vertex shader
 const GLchar* vertexSource =
-    "attribute vec4 position;                             \n"
-    "uniform float panX, panY, zoom;                     \n"
-    "varying vec3 color;                                 \n"
-    "void main()                                         \n"
-    "{                                                   \n"
-    "   gl_Position = vec4(position.xyz, 1.0);           \n"
-    "   gl_Position.x = (gl_Position.x + panX) * zoom;   \n"
-    "   gl_Position.y = (gl_Position.y + panY) * zoom;   \n"
-    "   color = gl_Position.xyz + vec3(0.5);             \n"
-    "}                                                   \n";
+    "attribute vec4 position;                      \n"
+    "varying vec3 color;                           \n"
+    "void main()                                   \n"
+    "{                                             \n"
+    "    gl_Position = vec4(position.xyz, 1.0);    \n"
+    "    color = gl_Position.xyz + vec3(0.5);      \n"
+    "}                                             \n";
 
 // Fragment/pixel shader
 const GLchar* fragmentSource =
@@ -52,7 +42,7 @@ const GLchar* fragmentSource =
     "varying vec3 color;                          \n"
     "void main()                                  \n"
     "{                                            \n"
-    "  gl_FragColor = vec4 ( color, 1.0 );        \n"
+    "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
 SDL_Window* wnd;
@@ -66,11 +56,6 @@ void main_loop()
         if (event.type == SDL_QUIT) 
             std::terminate();
     }
-
-    // Update uniforms (frame invariant shader vars) - these are no-ops for now
-    glUniform1f(uniformPanX, 0.0f);
-    glUniform1f(uniformPanY, 0.0f);
-    glUniform1f(uniformZoom, 1.0f);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -87,11 +72,11 @@ int main(int argc, char** argv)
 {
     // Create SDL window with GL context
     wnd = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                            1024, 768, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetSwapInterval(0);
+    SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GLContext glc = SDL_GL_CreateContext(wnd);
@@ -106,17 +91,11 @@ int main(int argc, char** argv)
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
 
-    // Link the vertex and fragment shader into a shader program
+    // Link the vertex and fragment shader into a shader program and use it
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
- 
-    // Get uniforms location for updating later
-    uniformPanX = glGetUniformLocation(shaderProgram, "panX");
-    uniformPanY = glGetUniformLocation(shaderProgram, "panY");
-    uniformZoom = glGetUniformLocation(shaderProgram, "zoom");    
-
     glUseProgram(shaderProgram);
 
     // Create a vertex buffer object and copy the vertex data to it

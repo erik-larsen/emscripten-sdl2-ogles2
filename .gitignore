@@ -1,4 +1,3 @@
 # Exclude emscripten generated files
-*.html
 *.js
 *.wasm
