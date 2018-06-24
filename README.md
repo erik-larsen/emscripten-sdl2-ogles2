@@ -1,5 +1,5 @@
 # emscripten-sdl2-ogles2
-*C++/SDL2/OpenGLES2 to Javascript/WebGL sample*
+*C++/SDL2/OpenGLES2 to Javascript/WebGL using Emscripten*
 
 This project is a sample/testbed for porting C++/OpenGL graphical apps to run in the browser.  The motivation for this is to preserve a bunch of old graphics demos written in C/C++.  By getting them running in the browser and making them open source, hopefully these demos can live on for a very long time.  This work was inspired by similar work to preserve arcade games in the browser at https://archive.org/details/internetarcade.
 
