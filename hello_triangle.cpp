@@ -18,6 +18,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #include <SDL.h>
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL_opengles2.h>
@@ -27,7 +28,8 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-SDL_Window* wnd;
+SDL_Window* wnd = nullptr;
+Uint32 windowID = 0;
 int wndWidth = 640, wndHeight = 480;
 bool mouseDown = false;
 
@@ -122,8 +124,8 @@ void handleEvents()
 void redraw()
 {
     // Update uniforms
-	glUniform2fv(uniformPan, 1, pan);
-	glUniform1f(uniformZoom, zoom);
+    glUniform2fv(uniformPan, 1, pan);
+    glUniform1f(uniformZoom, zoom);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -144,9 +146,14 @@ void main_loop()
 
 int main(int argc, char** argv)
 {
+#ifdef __EMSCRIPTEN__
+    emscripten_get_canvas_element_size("#canvas", &wndWidth, &wndHeight);
+#endif
+
     // Create SDL2 window with GL context
     wnd = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             wndWidth, wndHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    windowID = SDL_GetWindowID(wnd);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
