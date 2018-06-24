@@ -2,4 +2,3 @@
 *.js
 *.wasm
 *.vscode
-*_debug.html

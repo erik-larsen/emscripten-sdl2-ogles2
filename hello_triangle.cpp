@@ -6,41 +6,43 @@
 //
 // Build:
 //     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle.js
+//     emrun hello_triangle.html
 //
-// Run (open in browser):
-//     index.html
+// Debug (provides stdout console):
+//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle_debug.js
+//     emrun hello_triangle_debug.html
 //
 // Result:
-//     A colorful triangle.  Left mouse pans, wheel zooms in/out.
+//     A colorful triangle.  Left mouse pans, mouse wheel zooms in/out.  Window is resizable.
 //
 #include <exception>
 #include <algorithm>
 
+#define GL_GLEXT_PROTOTYPES 1
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <SDL.h>
-#define GL_GLEXT_PROTOTYPES 1
 #include <SDL_opengles2.h>
 #else
 #include <SDL2/SDL.h>
-#define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-SDL_Window* wnd = nullptr;
+SDL_Window* window = nullptr;
 Uint32 windowID = 0;
-int wndWidth = 640, wndHeight = 480;
+int windowWidth = 640, windowHeight = 480;
 bool mouseDown = false;
 
-// Uniforms - frame invariant shader vars
-GLint uniformPan, uniformZoom;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f;
+// Shader vars
+GLint shaderPan, shaderZoom, shaderAspect;
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f;
 
 // Vertex shader
 const GLchar* vertexSource =
     "uniform vec2 pan;                             \n"
     "uniform float zoom;                           \n"
+    "uniform float aspect;                         \n"
     "attribute vec4 position;                      \n"
     "varying vec3 color;                           \n"
     "void main()                                   \n"
@@ -48,6 +50,7 @@ const GLchar* vertexSource =
     "    gl_Position = vec4(position.xyz, 1.0);    \n"
     "    gl_Position.xy += pan;                    \n"
     "    gl_Position.xy *= zoom;                   \n"
+    "    gl_Position.y *= aspect;                  \n"
     "    color = gl_Position.xyz + vec3(0.5);      \n"
     "}                                             \n";
 
@@ -65,23 +68,70 @@ float clamp (float val, float lo, float hi)
     return std::max(lo, std::min(val, hi));
 }
 
+void updateShader()
+{
+    glUniform2fv(shaderPan, 1, pan);
+    glUniform1f(shaderZoom, zoom); 
+    glUniform1f(shaderAspect, aspect);
+}
+
+void resizeEvent(int width, int height)
+{
+    windowWidth = width;
+    windowHeight = height;
+
+    // Update viewport and aspect ratio
+    glViewport(0, 0, windowWidth, windowHeight);
+    aspect = windowWidth / (float)windowHeight; 
+    updateShader();
+}
+
+void panEvent(int x, int y)
+{ 
+    // Make display follow cursor by normalizing cursor to range -2,2, scaled by inverse zoom 
+    pan[0] = ((x / (float) windowWidth) - 0.5f) * 2.0f / zoom;
+    pan[1] = ((1.0f - (y / (float) windowHeight)) - 0.5f) * 2.0f / zoom / aspect;
+    updateShader();
+}
+
+void zoomEvent(bool wheelDown)
+{                
+    // Zoom by scaling up/down in 0.1 increments 
+    zoom += (wheelDown ? -0.1f : 0.1f);
+    zoom = clamp(zoom, 0.1f, 10.0f);
+    updateShader();
+}
+
 void handleEvents()
 {
     // Handle events
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
+        // Debugging
+        printf ("pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
+
         switch (event.type)
         {
+            case SDL_QUIT:
+                std::terminate();
+                break;
+
+            case SDL_WINDOWEVENT:
+            {
+                if (event.window.windowID == windowID
+                    && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+                {
+                    resizeEvent(event.window.data1, event.window.data2);
+                }
+                break;
+              }
+
             case SDL_MOUSEMOTION: 
             {
                 SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
                 if (mouseDown)
-                {
-                    // Normalize cursor position to -2.0 to 2.0 in x and y
-                    pan[0] = ((m->x / (float) wndWidth) - 0.5f) * 2.0f / zoom;
-                    pan[1] = ((1.0f - (m->y / (float) wndHeight)) - 0.5f) * 2.0f / zoom;
-                }
+                    panEvent(m->x, m->y);
                 break;
             }
 
@@ -92,7 +142,7 @@ void handleEvents()
                 {
                     mouseDown = true;
 
-                    // Push a motion event to update display at current mouse
+                    // Push a motion event to update display at current mouse position
                     SDL_Event push_event;
                     push_event.type = SDL_MOUSEMOTION;
                     push_event.motion.x = m->x;
@@ -113,8 +163,8 @@ void handleEvents()
             case SDL_MOUSEWHEEL: 
             {
                 SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
-                zoom += ((m->y < 0) ? -0.1f : 0.1f);
-                zoom = clamp(zoom, 0.0f, 10.0f);
+                bool wheelDown = m->y < 0;
+                zoomEvent(wheelDown);
                 break;
             }
         }
@@ -123,22 +173,17 @@ void handleEvents()
 
 void redraw()
 {
-    // Update uniforms
-    glUniform2fv(uniformPan, 1, pan);
-    glUniform1f(uniformZoom, zoom);
-
-    // Clear the screen to black
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw the vertex buffer
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     // Swap front/back framebuffers
-    SDL_GL_SwapWindow(wnd);
+    SDL_GL_SwapWindow(window);
 }
 
-void main_loop() 
+void mainLoop() 
 {    
     handleEvents();
     redraw();
@@ -146,44 +191,46 @@ void main_loop()
 
 int main(int argc, char** argv)
 {
-#ifdef __EMSCRIPTEN__
-    emscripten_get_canvas_element_size("#canvas", &wndWidth, &wndHeight);
-#endif
+    // Create SDL window
+    window = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                            windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
+    windowID = SDL_GetWindowID(window);
 
-    // Create SDL2 window with GL context
-    wnd = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            wndWidth, wndHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    windowID = SDL_GetWindowID(wnd);
-
+    // Create OpenGLES 2 context on window
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GLContext glc = SDL_GL_CreateContext(wnd);
+    SDL_GLContext glc = SDL_GL_CreateContext(window);
 
-    // Create and compile the vertex shader
+    // Set clear color to black
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexSource, NULL);
     glCompileShader(vertexShader);
 
-    // Create and compile the fragment shader
+    // Create and compile fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
 
-    // Link the vertex and fragment shader into a shader program and use it
+    // Link vertex and fragment shader into shader program and use it
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
 
-    // Get uniform locations for updating later
-	uniformPan = glGetUniformLocation(shaderProgram, "pan");
-	uniformZoom = glGetUniformLocation(shaderProgram, "zoom");    
+    // Get shader variables and initalize them
+	shaderPan = glGetUniformLocation(shaderProgram, "pan");
+	shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
+	shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
+    updateShader();
 
-    // Create a vertex buffer object and copy the vertex data to it
+    // Create vertex buffer object and copy vertex data into it
     GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -200,11 +247,12 @@ int main(int argc, char** argv)
     glEnableVertexAttribArray(posAttrib);
     glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+    // Start the main loop
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(main_loop, 0, true);
+    emscripten_set_main_loop(mainLoop, 0, true);
 #else
     while(true) 
-        main_loop();
+        mainLoop();
 #endif
 
     return 0;
