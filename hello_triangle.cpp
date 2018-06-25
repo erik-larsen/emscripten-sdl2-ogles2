@@ -6,10 +6,9 @@
 //
 // Build:
 //     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle.js
-//     emrun hello_triangle.html
 //
-// Debug (provides stdout console):
-//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle_debug.js
+// Run:
+//     emrun hello_triangle.html
 //     emrun hello_triangle_debug.html
 //
 // Result:
@@ -32,7 +31,7 @@
 SDL_Window* window = nullptr;
 Uint32 windowID = 0;
 int windowWidth = 640, windowHeight = 480;
-bool mouseDown = false;
+bool mouseDown = false, fingerDown = false;
 
 // Shader vars
 GLint shaderPan, shaderZoom, shaderAspect;
@@ -109,8 +108,9 @@ void handleEvents()
     while (SDL_PollEvent(&event))
     {
         // Debugging
-        printf ("pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
-
+        printf ("event=%d mouse=%d finger=%d pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", 
+                 event.type, mouseDown, fingerDown, pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
+  
         switch (event.type)
         {
             case SDL_QUIT:
@@ -130,7 +130,7 @@ void handleEvents()
             case SDL_MOUSEMOTION: 
             {
                 SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
-                if (mouseDown)
+                if (mouseDown && !fingerDown)
                     panEvent(m->x, m->y);
                 break;
             }
@@ -138,7 +138,7 @@ void handleEvents()
             case SDL_MOUSEBUTTONDOWN: 
             {
                 SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
-                if (m->button == SDL_BUTTON_LEFT)
+                if (m->button == SDL_BUTTON_LEFT && !fingerDown)
                 {
                     mouseDown = true;
 
@@ -167,6 +167,17 @@ void handleEvents()
                 zoomEvent(wheelDown);
                 break;
             }
+
+            case SDL_FINGERMOTION:
+                break;
+
+            case SDL_FINGERDOWN:
+                fingerDown = true;
+                break;
+
+            case SDL_FINGERUP:
+                fingerDown = false;
+                break;
         }
     }
 }
