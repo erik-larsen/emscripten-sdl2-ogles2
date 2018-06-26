@@ -28,10 +28,14 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
+// Window
 SDL_Window* window = nullptr;
 Uint32 windowID = 0;
 int windowWidth = 640, windowHeight = 480;
-bool mouseDown = false, fingerDown = false;
+
+// Inputs
+bool mouseDown = false, fingerDown = false, pinch = false;
+float pinchDist = 0.0f;
 
 // Shader vars
 GLint shaderPan, shaderZoom, shaderAspect;
@@ -85,7 +89,15 @@ void resizeEvent(int width, int height)
     updateShader();
 }
 
-void panEvent(int x, int y)
+void zoomEvent(bool wheelDown)
+{                
+    // Zoom by scaling up/down in 0.1 increments 
+    zoom += (wheelDown ? -0.1f : 0.1f);
+    zoom = clamp(zoom, 0.1f, 10.0f);
+    updateShader();
+}
+
+void panEventMouse(int x, int y)
 { 
     // Make display follow cursor by normalizing cursor to range -2,2, scaled by inverse zoom 
     pan[0] = ((x / (float) windowWidth) - 0.5f) * 2.0f / zoom;
@@ -93,11 +105,10 @@ void panEvent(int x, int y)
     updateShader();
 }
 
-void zoomEvent(bool wheelDown)
-{                
-    // Zoom by scaling up/down in 0.1 increments 
-    zoom += (wheelDown ? -0.1f : 0.1f);
-    zoom = clamp(zoom, 0.1f, 10.0f);
+void panEventFinger(float x, float y)
+{ 
+    pan[0] = (x - 0.5f) * 2.0f / zoom;
+    pan[1] = (1.0f - y - 0.5f) * 2.0f / zoom / aspect;
     updateShader();
 }
 
@@ -107,10 +118,6 @@ void handleEvents()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        // Debugging
-        printf ("event=%d mouse=%d finger=%d pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", 
-                 event.type, mouseDown, fingerDown, pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
-  
         switch (event.type)
         {
             case SDL_QUIT:
@@ -125,13 +132,21 @@ void handleEvents()
                     resizeEvent(event.window.data1, event.window.data2);
                 }
                 break;
-              }
+            }
 
+            case SDL_MOUSEWHEEL: 
+            {
+                SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
+                bool wheelDown = m->y < 0;
+                zoomEvent(wheelDown);
+                break;
+            }
+            
             case SDL_MOUSEMOTION: 
             {
                 SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
                 if (mouseDown && !fingerDown)
-                    panEvent(m->x, m->y);
+                    panEventMouse(m->x, m->y);
                 break;
             }
 
@@ -147,7 +162,7 @@ void handleEvents()
                     push_event.type = SDL_MOUSEMOTION;
                     push_event.motion.x = m->x;
                     push_event.motion.y = m->y;
-                    SDL_PushEvent(&push_event);                    
+                    SDL_PushEvent(&push_event);                       
                 }
                 break;
             }
@@ -160,15 +175,12 @@ void handleEvents()
                 break;
             }
 
-            case SDL_MOUSEWHEEL: 
-            {
-                SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
-                bool wheelDown = m->y < 0;
-                zoomEvent(wheelDown);
-                break;
-            }
-
             case SDL_FINGERMOTION:
+                if (fingerDown)
+                {
+                    SDL_TouchFingerEvent *m = (SDL_TouchFingerEvent*)&event;
+                    panEventFinger(m->x, m->y);
+                }
                 break;
 
             case SDL_FINGERDOWN:
@@ -178,7 +190,21 @@ void handleEvents()
             case SDL_FINGERUP:
                 fingerDown = false;
                 break;
+
+            case SDL_MULTIGESTURE:
+                SDL_MultiGestureEvent *m = (SDL_MultiGestureEvent*)&event;
+                if (fabs(m->dDist) > 0.002f)
+                {
+                    pinch = true;
+                    pinchDist = m->dDist;  // positive=open, negative=close
+                    printf ("fingers=%d\n",m->numFingers);
+                }
+                break;
         }
+
+        // Debugging
+        printf ("event=%d mouse=%d finger=%d pinch=%d pinchDist=%f pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", 
+                 event.type, mouseDown, fingerDown, pinch, pinchDist, pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
     }
 }
 
