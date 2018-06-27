@@ -1,4 +1,2 @@
 # Exclude emscripten generated files
-*.js
-*.wasm
 *.vscode
