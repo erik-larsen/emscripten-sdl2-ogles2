@@ -34,7 +34,10 @@ Uint32 windowID = 0;
 int windowWidth = 640, windowHeight = 480;
 
 // Inputs
-bool mouseDown = false, fingerDown = false, pinch = false;
+bool mouseDown = false;
+int mouseDownX = 0, mouseDownY = 0;
+GLfloat basePan[2] = {0.0f, 0.0f};
+bool fingerDown = false, pinch = false;
 float pinchDist = 0.0f;
 
 // Shader vars
@@ -100,8 +103,10 @@ void zoomEvent(bool wheelDown)
 void panEventMouse(int x, int y)
 { 
     // Make display follow cursor by normalizing cursor to range -2,2, scaled by inverse zoom 
-    pan[0] = ((x / (float) windowWidth) - 0.5f) * 2.0f / zoom;
-    pan[1] = ((1.0f - (y / (float) windowHeight)) - 0.5f) * 2.0f / zoom / aspect;
+    int deltaX = windowWidth / 2 + (x - mouseDownX),
+        deltaY = windowHeight / 2 + (y - mouseDownY);
+    pan[0] = basePan[0] + ((deltaX / (float) windowWidth) - 0.5f) * 2.0f / zoom;
+    pan[1] = basePan[1] + ((1.0f - (deltaY / (float) windowHeight)) - 0.5f) * 2.0f / zoom / aspect;
     updateShader();
 }
 
@@ -156,13 +161,10 @@ void handleEvents()
                 if (m->button == SDL_BUTTON_LEFT && !fingerDown)
                 {
                     mouseDown = true;
-
-                    // Push a motion event to update display at current mouse position
-                    SDL_Event push_event;
-                    push_event.type = SDL_MOUSEMOTION;
-                    push_event.motion.x = m->x;
-                    push_event.motion.y = m->y;
-                    SDL_PushEvent(&push_event);                       
+                    mouseDownX = m->x;
+                    mouseDownY = m->y;
+                    basePan[0] = pan[0]; 
+                    basePan[1] = pan[1];
                 }
                 break;
             }
