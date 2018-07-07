@@ -34,8 +34,9 @@ Uint32 windowID = 0;
 int windowWidth = 640, windowHeight = 480;
 
 // Inputs
-bool mouseDown = false;
-int mouseDownX = 0, mouseDownY = 0;
+bool mouseButtonDown = false;
+int mouseButtonDownX = 0, mouseButtonDownY = 0;
+int mousePositionX = 0, mousePositionY = 0;
 GLfloat basePan[2] = {0.0f, 0.0f};
 bool fingerDown = false, pinch = false;
 float pinchDist = 0.0f;
@@ -81,6 +82,28 @@ void updateShader()
     glUniform1f(shaderAspect, aspect);
 }
 
+// Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
+void normWindowToDeviceCoords (float normWinX, float normWinY, float& deviceX, float& deviceY)
+{
+    deviceX = (normWinX - 0.5f) * 2.0f;
+    deviceY = (1.0f - normWinY - 0.5f) * 2.0f;
+}
+
+// Convert from window coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
+void windowToDeviceCoords (int winX, int winY, float& deviceX, float& deviceY)
+{
+    normWindowToDeviceCoords(winX / (float)windowWidth,  winY / (float)windowHeight, deviceX, deviceY);
+}
+
+// Convert from window coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to world coords ([-inf, inf], [-inf, inf])
+void windowToWorldCoords (int winX, int winY, float& worldX, float& worldY)
+{
+    float deviceX, deviceY;
+    windowToDeviceCoords (winX, winY, deviceX, deviceY);   
+    worldX = deviceX / zoom - pan[0];
+    worldY = deviceY / aspect / zoom - pan[1];
+}
+
 void resizeEvent(int width, int height)
 {
     windowWidth = width;
@@ -92,28 +115,51 @@ void resizeEvent(int width, int height)
     updateShader();
 }
 
-void zoomEvent(bool wheelDown)
+void zoomEvent(bool mouseWheelDown, int x, int y)
 {                
-    // Zoom by scaling up/down in 0.1 increments 
-    zoom += (wheelDown ? -0.1f : 0.1f);
+    float preZoomWorldX, preZoomWorldY;
+    windowToWorldCoords(mousePositionX, mousePositionY, preZoomWorldX, preZoomWorldY);
+
+    // Zoom by scaling up/down in 0.05 increments 
+    float zoomDelta = mouseWheelDown ? -0.05f : 0.05f;
+    zoom += zoomDelta;
+
+    // Limit zooming too far either way
     zoom = clamp(zoom, 0.1f, 10.0f);
+
+    float postZoomWorldX, postZoomWorldY;
+    windowToWorldCoords(mousePositionX, mousePositionY, postZoomWorldX, postZoomWorldY);
+
+    // Zoom to point: Keep the world coords under mouse position the same before and after the zoom
+    float deltaWorldX = postZoomWorldX - preZoomWorldX, deltaWorldY = postZoomWorldY - preZoomWorldY;
+    pan[0] += deltaWorldX;
+    pan[1] += deltaWorldY;
+
     updateShader();
 }
 
 void panEventMouse(int x, int y)
 { 
-    // Make display follow cursor by normalizing cursor to range -2,2, scaled by inverse zoom 
-    int deltaX = windowWidth / 2 + (x - mouseDownX),
-        deltaY = windowHeight / 2 + (y - mouseDownY);
-    pan[0] = basePan[0] + ((deltaX / (float) windowWidth) - 0.5f) * 2.0f / zoom;
-    pan[1] = basePan[1] + ((1.0f - (deltaY / (float) windowHeight)) - 0.5f) * 2.0f / zoom / aspect;
+     int deltaX = windowWidth / 2 + (x - mouseButtonDownX),
+         deltaY = windowHeight / 2 + (y - mouseButtonDownY);
+
+    float deviceX, deviceY;
+    windowToDeviceCoords(deltaX,  deltaY, deviceX, deviceY);
+
+    pan[0] = basePan[0] + deviceX / zoom;
+    pan[1] = basePan[1] + deviceY / zoom / aspect;
+    
     updateShader();
 }
 
 void panEventFinger(float x, float y)
 { 
-    pan[0] = (x - 0.5f) * 2.0f / zoom;
-    pan[1] = (1.0f - y - 0.5f) * 2.0f / zoom / aspect;
+    float deviceX, deviceY;
+    normWindowToDeviceCoords(x, y, deviceX, deviceY);
+
+    pan[0] = deviceX / zoom;
+    pan[1] = deviceY / zoom / aspect;
+
     updateShader();
 }
 
@@ -134,7 +180,8 @@ void handleEvents()
                 if (event.window.windowID == windowID
                     && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                 {
-                    resizeEvent(event.window.data1, event.window.data2);
+                    int width = event.window.data1, height = event.window.data2;
+                    resizeEvent(width, height);
                 }
                 break;
             }
@@ -142,16 +189,18 @@ void handleEvents()
             case SDL_MOUSEWHEEL: 
             {
                 SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
-                bool wheelDown = m->y < 0;
-                zoomEvent(wheelDown);
+                bool mouseWheelDown = (m->y < 0);
+                zoomEvent(mouseWheelDown, mousePositionX, mousePositionY);
                 break;
             }
             
             case SDL_MOUSEMOTION: 
             {
                 SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
-                if (mouseDown && !fingerDown)
-                    panEventMouse(m->x, m->y);
+                mousePositionX = m->x;
+                mousePositionY = m->y;
+                if (mouseButtonDown && !fingerDown)
+                    panEventMouse(mousePositionX, mousePositionY);
                 break;
             }
 
@@ -160,9 +209,9 @@ void handleEvents()
                 SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
                 if (m->button == SDL_BUTTON_LEFT && !fingerDown)
                 {
-                    mouseDown = true;
-                    mouseDownX = m->x;
-                    mouseDownY = m->y;
+                    mouseButtonDown = true;
+                    mouseButtonDownX = m->x;
+                    mouseButtonDownY = m->y;
                     basePan[0] = pan[0]; 
                     basePan[1] = pan[1];
                 }
@@ -173,12 +222,12 @@ void handleEvents()
             {
                 SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
                 if (m->button == SDL_BUTTON_LEFT)
-                    mouseDown = false;
+                    mouseButtonDown = false;
                 break;
             }
 
             case SDL_FINGERMOTION:
-                if (fingerDown)
+                if (fingerDown && !pinch)
                 {
                     SDL_TouchFingerEvent *m = (SDL_TouchFingerEvent*)&event;
                     panEventFinger(m->x, m->y);
@@ -189,24 +238,30 @@ void handleEvents()
                 fingerDown = true;
                 break;
 
+            case SDL_MULTIGESTURE:
+            {
+                SDL_MultiGestureEvent *m = (SDL_MultiGestureEvent*)&event;
+                pinch = true;
+                pinchDist = m->dDist;  // positive=open, negative=close
+                printf ("    fingers=%d\n",m->numFingers);
+                break;
+            }
+
             case SDL_FINGERUP:
                 fingerDown = false;
-                break;
-
-            case SDL_MULTIGESTURE:
-                SDL_MultiGestureEvent *m = (SDL_MultiGestureEvent*)&event;
-                if (fabs(m->dDist) > 0.002f)
-                {
-                    pinch = true;
-                    pinchDist = m->dDist;  // positive=open, negative=close
-                    printf ("fingers=%d\n",m->numFingers);
-                }
+                pinch = false;
                 break;
         }
 
         // Debugging
-        printf ("event=%d mouse=%d finger=%d pinch=%d pinchDist=%f pan=%f,%f zoom=%f aspect=%f window=%dx%d\n", 
-                 event.type, mouseDown, fingerDown, pinch, pinchDist, pan[0], pan[1], zoom, aspect, windowWidth, windowHeight);
+        printf ("event=%d mousePos=%d,%d mouseButtonDown=%d fingerDown=%d pinch=%d pinchDist=%f aspect=%f window=%dx%d\n", 
+                 event.type, mousePositionX, mousePositionY, mouseButtonDown, fingerDown, pinch, pinchDist, aspect, windowWidth, windowHeight);      
+        printf ("    zoom=%f pan=%f,%f\n", zoom, pan[0], pan[1]);
+
+        float deviceX, deviceY;
+        windowToDeviceCoords(mousePositionX, mousePositionY, deviceX, deviceY);
+        printf ("    geomAtCursorPos=%f,%f\n", deviceX / zoom - pan[0], deviceY / aspect / zoom - pan[1]);
+
     }
 }
 
