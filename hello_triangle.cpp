@@ -5,7 +5,7 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -o hello_triangle.js
+//     emcc hello_triangle.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 -o hello_triangle.js
 //
 // Run:
 //     emrun hello_triangle.html
