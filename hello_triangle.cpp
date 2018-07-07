@@ -199,7 +199,7 @@ void handleEvents()
                 SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
                 mousePositionX = m->x;
                 mousePositionY = m->y;
-                if (mouseButtonDown && !fingerDown)
+                if (mouseButtonDown && !fingerDown && !pinch)
                     panEventMouse(mousePositionX, mousePositionY);
                 break;
             }
@@ -207,7 +207,7 @@ void handleEvents()
             case SDL_MOUSEBUTTONDOWN: 
             {
                 SDL_MouseButtonEvent *m = (SDL_MouseButtonEvent*)&event;
-                if (m->button == SDL_BUTTON_LEFT && !fingerDown)
+                if (m->button == SDL_BUTTON_LEFT && !fingerDown && !pinch)
                 {
                     mouseButtonDown = true;
                     mouseButtonDownX = m->x;
@@ -227,7 +227,7 @@ void handleEvents()
             }
 
             case SDL_FINGERMOTION:
-                if (fingerDown && !pinch)
+                if (fingerDown)
                 {
                     SDL_TouchFingerEvent *m = (SDL_TouchFingerEvent*)&event;
                     panEventFinger(m->x, m->y);
@@ -235,13 +235,16 @@ void handleEvents()
                 break;
 
             case SDL_FINGERDOWN:
-                fingerDown = true;
+                if (!pinch)
+                    fingerDown = true;
                 break;
 
             case SDL_MULTIGESTURE:
             {
                 SDL_MultiGestureEvent *m = (SDL_MultiGestureEvent*)&event;
                 pinch = true;
+                fingerDown = false;
+                mouseButtonDown = false;
                 pinchDist = m->dDist;  // positive=open, negative=close
                 printf ("    fingers=%d\n",m->numFingers);
                 break;
@@ -250,6 +253,7 @@ void handleEvents()
             case SDL_FINGERUP:
                 fingerDown = false;
                 pinch = false;
+                pinchDist = 0.0f;
                 break;
         }
 
@@ -257,11 +261,6 @@ void handleEvents()
         printf ("event=%d mousePos=%d,%d mouseButtonDown=%d fingerDown=%d pinch=%d pinchDist=%f aspect=%f window=%dx%d\n", 
                  event.type, mousePositionX, mousePositionY, mouseButtonDown, fingerDown, pinch, pinchDist, aspect, windowWidth, windowHeight);      
         printf ("    zoom=%f pan=%f,%f\n", zoom, pan[0], pan[1]);
-
-        float deviceX, deviceY;
-        windowToDeviceCoords(mousePositionX, mousePositionY, deviceX, deviceY);
-        printf ("    geomAtCursorPos=%f,%f\n", deviceX / zoom - pan[0], deviceY / aspect / zoom - pan[1]);
-
     }
 }
 
