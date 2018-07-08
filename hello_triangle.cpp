@@ -46,7 +46,7 @@ long long fingerDownId = 0;
 
 // Pinch input
 const float PINCH_ZOOM_THRESHOLD = 0.001f;
-const float PINCH_SCALE = 4.0f;
+const float PINCH_SCALE = 8.0f;
 bool pinch = false;
 
 // Shader vars
