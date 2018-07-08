@@ -18,5 +18,3 @@ Because these demos need OS event handling (keyboard, mouse, touch, text, audio,
 ## Why OpenGLES2?  
 
 Because these demos require GPU accelerated graphics. Using the GPU in the browser requires WebGL, and OpenGLES is the path to WebGL via Emscripten.
-
-Perhaps this project could one day grow into a library for building C/C++ graphics demos that run in the browser, but for now the goal is to preserve these old demos.
