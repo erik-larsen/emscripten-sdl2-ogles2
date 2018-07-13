@@ -18,8 +18,6 @@
 #include <exception>
 #include <algorithm>
 
-#define GL_GLEXT_PROTOTYPES 1
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <SDL.h>
@@ -87,7 +85,6 @@ const GLchar* vertexSource =
 // Fragment/pixel shader
 const GLchar* fragmentSource =
     "precision mediump float;                            \n"
-    "varying vec3 color;                                 \n"
     "varying vec2 texCoord;                              \n"
     "uniform sampler2D texSampler;                       \n"
     "void main()                                         \n"
@@ -200,7 +197,7 @@ void initTexture()
                         format, GL_UNSIGNED_BYTE, image->pixels);
         }
         else
-            printf ("Unsupported bits per pixel!\n");
+            printf ("Unsupported %d bits per pixel!\n", bitsPerPixel);
                                  
         SDL_FreeSurface (image);        
     }                       
@@ -250,6 +247,7 @@ void windowResizeEvent(int width, int height)
     // Update viewport and aspect ratio
     glViewport(0, 0, windowWidth, windowHeight);
     aspect = windowWidth / (float)windowHeight; 
+
     updateShader();
 }
 
@@ -467,7 +465,7 @@ int main(int argc, char** argv)
                             windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
     windowID = SDL_GetWindowID(window);
 
-    // Create OpenGLES 2 context on SDL window
+    // Create OpenGLES2 context on SDL window
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetSwapInterval(1);
