@@ -7,7 +7,7 @@ With these demos running in the browser, hopefully they can live on for a long t
 
 ## Try it
 
-[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Demonstrates minimal code needed to draw a colorful triangle with shaders, with support for mouse and touch input. **Pan** with left mouse or finger, **Zoom** with mouse wheel or pinch gesture.
+[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Demonstrates minimal code needed to draw a colorful triangle with shaders, with support for mouse and touch input.  Controls: **pan** with left mouse or finger touch, **zoom** with mouse wheel or pinch gesture.
 
 [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html) - Same controls as Hello Triangle, but now the triangle is textured, using SDL2 to load an image file.
 
@@ -17,7 +17,7 @@ These demos need to run in the browser and porting to Javascript is no fun.  Run
 
 ## Why SDL2? 
 
-These demos require OS event handling (keyboard, mouse, touch, text, audio, networking, etc.) and SDL provides a cross-platform library to do this.  And Emscripten enables running SDL in the browser.
+These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.), SDL provides a cross-platform library to access this, and Emscripten runs SDL in the browser.
 
 ## Why OpenGLES2?  
 
