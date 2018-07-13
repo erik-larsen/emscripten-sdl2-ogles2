@@ -5,7 +5,9 @@ This project is a collection of C++/OpenGL graphical demos that run in the brows
 
 ## Try it
 
-[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/) - Demonstrates minimal code needed, with support for mouse and touch input (see also [debug version](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle_debug.html)).
+[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Demonstrates minimal code needed to draw a colorful triangle with shaders, with support for mouse and touch input (see also [debug version](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle_debug.html)).
+
+[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Similar to Hello Triangle, triangle is textured with an image file.
 
 ## Why Emscripten?  
 
