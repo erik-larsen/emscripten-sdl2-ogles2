@@ -128,9 +128,9 @@ GLuint initShader()
     glUseProgram(shaderProgram);
 
     // Get shader variables and initalize them
-	shaderPan = glGetUniformLocation(shaderProgram, "pan");
-	shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
-	shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
+    shaderPan = glGetUniformLocation(shaderProgram, "pan");
+    shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
+    shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
     updateShader();
 
     return shaderProgram;
