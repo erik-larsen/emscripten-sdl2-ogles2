@@ -150,27 +150,23 @@ void initGeometry(GLuint shaderProgram)
 void initTexture()
 {
     SDL_Surface *image = IMG_Load(TEXTURE_FILENAME);
-    if (image)
-        printf("Loaded %s, dimensions %dx%d\n", TEXTURE_FILENAME, image->w, image->h);
-    else
-    {
-        printf("Failed to load %s, due to %s\n", TEXTURE_FILENAME, IMG_GetError());
 
-        // Create a fallback texture programmatically
+    if (!image)
+    {
+        // Create a fallback gray texture
+        printf("Failed to load %s, due to %s\n", TEXTURE_FILENAME, IMG_GetError());
         const int w = 128, h = 128, bitsPerPixel = 24;
         image = SDL_CreateRGBSurface(0, w, h, bitsPerPixel, 0, 0, 0, 0);
-
-        // Make it gray
         if (image)
             memset(image->pixels, 0x42, image->w * image->h * bitsPerPixel / 8);
-        else
-            printf ("Falled to create fallback texture, bummer! :-(\n");
     }
 
     if (image)
     {
         int bitsPerPixel = image->format->BitsPerPixel;
-        printf ("Image bits per pixel = %d\n", bitsPerPixel);
+        printf ("Image dimensions %dx%d, %d bits per pixel\n", image->w, image->h, bitsPerPixel);
+
+        // Determine GL texture format
         GLint format = -1;
         if (bitsPerPixel == 24)
             format = GL_RGB;
@@ -196,8 +192,6 @@ void initTexture()
             glTexImage2D(GL_TEXTURE_2D, 0, format, image->w, image->h, 0,
                         format, GL_UNSIGNED_BYTE, image->pixels);
         }
-        else
-            printf ("Unsupported %d bits per pixel!\n", bitsPerPixel);
                                  
         SDL_FreeSurface (image);        
     }                       
