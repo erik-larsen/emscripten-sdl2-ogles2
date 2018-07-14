@@ -9,7 +9,9 @@ With these demos running in the browser, hopefully they can live on for a long t
 
 [Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Demonstrates minimal code needed to draw a colorful triangle with shaders, with support for mouse and touch input.  Controls: **pan** with left mouse or finger touch, **zoom** with mouse wheel or pinch gesture.
 
-[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html) - Same controls as Hello Triangle, but now the triangle is textured, using SDL2 to load an image file.
+[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html) - Same controls as Hello Triangle, but the triangle is textured, using SDL2 to load an image file.
+
+[Hello TrueType Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text.html) - Same controls as Hello Triangle, but  the triangle contains text, using SDL2 to load a TrueType font into a texture.
 
 ## Why Emscripten?  
 
