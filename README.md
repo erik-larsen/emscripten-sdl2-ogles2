@@ -11,7 +11,7 @@ With these demos running in the browser, hopefully they can live on for a long t
 
 [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html) - Same controls as Hello Triangle, but the triangle is textured, using SDL2 to load an image file.
 
-[Hello TrueType Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text.html) - Same controls as Hello Triangle, but  the triangle contains text, using SDL2 to load a TrueType font into a texture.
+[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text.html) - Same controls as Hello Triangle, but  the triangle contains text, using SDL2 to load a TrueType font.
 
 ## Why Emscripten?  
 
