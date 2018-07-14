@@ -11,9 +11,9 @@ With these demos running in the browser, hopefully they can live on for a long t
 - Pan with left mouse or finger touch
 - Zoom with mouse wheel or pinch gesture.
 
-[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Similar to Hello Triangle, but the triangle is textured with an image file.
+[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Like Hello Triangle, but the triangle is textured with an image file.
 
-[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text_debug.html) - Similar tp Hello Triangle, but the triangle contains text rendered using a TrueType font.
+[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text_debug.html) - Like Hello Triangle, but the triangle contains text rendered using a TrueType font.
 
 ## Why Emscripten?  
 
