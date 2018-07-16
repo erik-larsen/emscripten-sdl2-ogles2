@@ -27,21 +27,6 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
-// Window
-SDL_Window* window = nullptr;
-Uint32 windowID = 0;
-int windowWidth = 640, windowHeight = 480;
-
-// Geometry & texture
-GLfloat triangleVertices[] = 
-{
-    0.0f, 0.5f, 0.0f,
-    -0.5f, -0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f
-};
-const char* FONTNAME = "LiberationSansBold.ttf";
-GLuint textureObj = 0;
-
 // Mouse input
 const float MOUSE_WHEEL_ZOOM_DELTA = 0.05f;
 bool mouseButtonDown = false;
@@ -58,10 +43,44 @@ const float PINCH_ZOOM_THRESHOLD = 0.001f;
 const float PINCH_SCALE = 8.0f;
 bool pinch = false;
 
+// Window
+SDL_Window* window = nullptr;
+Uint32 windowID = 0;
+int windowWidth = 640, windowHeight = 480;
+
+// Geometry
+GLfloat triangleVertices[] = 
+{
+    0.0f, 0.5f, 0.0f,
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f
+};
+GLuint triangleVbo = 0;
+
+GLfloat quadVertices[] = 
+{
+    0.0f, 2.0f, 0.0f,
+    2.0f, 2.0f, 0.0f,
+    0.0f, 0.0f, 0.0f,
+    2.0f, 0.0f, 0.0f
+};
+GLuint quadVbo = 0;
+
+// Texture
+GLuint textureObj = 0;
+
+// Text
+const char* FONT_NAME = "LiberationSansBold.ttf";
+const int FONT_POINT_SIZE = 36;
+const char* message = "HELLO WORLD";
+
 // Shader vars
+GLuint shaderProgram = 0;
+const GLint positionAttrib = 0;
+GLint shaderPan, shaderZoom, shaderAspect;
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f;
+
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
-GLint shaderPan, shaderZoom, shaderAspect, shaderFontAspect;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f, fontAspect = 1.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
 
 // Vertex shader
@@ -69,7 +88,6 @@ const GLchar* vertexSource =
     "uniform vec2 pan;                                   \n"
     "uniform float zoom;                                 \n"
     "uniform float aspect;                               \n"
-    "uniform float fontAspect;                           \n"
     "attribute vec4 position;                            \n"
     "varying vec2 texCoord;                              \n"
     "void main()                                         \n"
@@ -78,7 +96,7 @@ const GLchar* vertexSource =
     "    gl_Position.xy += pan;                          \n"
     "    gl_Position.xy *= zoom;                         \n"
     "    gl_Position.y *= aspect;                        \n"
-    "    texCoord = vec2(position.x + 0.46, -(position.y + 0.35) * fontAspect); \n"
+    "    texCoord = vec2(position.x , -position.y);      \n"
     "}                                                   \n";
 
 // Fragment/pixel shader
@@ -109,10 +127,9 @@ void updateShader()
     glUniform2fv(shaderPan, 1, pan);
     glUniform1f(shaderZoom, zoom); 
     glUniform1f(shaderAspect, aspect);
-    glUniform1f(shaderFontAspect, fontAspect);
 }
 
-GLuint initShader()
+void initShader()
 {
     // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -125,9 +142,11 @@ GLuint initShader()
     glCompileShader(fragmentShader);
 
     // Link vertex and fragment shader into shader program and use it
-    GLuint shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
+    glBindAttribLocation(shaderProgram, positionAttrib, "position");
+    glEnableVertexAttribArray(positionAttrib);
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
 
@@ -135,24 +154,30 @@ GLuint initShader()
     shaderPan = glGetUniformLocation(shaderProgram, "pan");
     shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
-    shaderFontAspect = glGetUniformLocation(shaderProgram, "fontAspect");
     updateShader();
-
-    return shaderProgram;
 }
 
-void initGeometry(GLuint shaderProgram)
+void initGeometry()
 {
-    // Create vertex buffer object and copy vertex data into it
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+   // Create vertex buffer objects and copy vertex data into them
+    glGenBuffers(1, &quadVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-    // Specify the layout of the shader vertex data (positions only, 3 floats)
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glGenBuffers(1, &triangleVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);  
+ }
+
+void debugPrintSurface(SDL_Surface* surface, const char* name, bool dumpPixels)
+{
+    printf ("%s dimensions %dx%d, %d bits per pixel\n", name, surface->w, surface->h, surface->format->BitsPerPixel);
+    if (dumpPixels)
+    {
+        for (int i = 0; i < surface->w * surface->h; ++i)
+            printf("%x ", ((unsigned int*)surface->pixels)[i]);
+        printf("\n");
+    }
 }
 
 void initTextTexture()
@@ -160,39 +185,50 @@ void initTextTexture()
     TTF_Init();
 
     // Load the font
-    const int pointSize = 64;
-    TTF_Font *font = TTF_OpenFont(FONTNAME, pointSize);
+    TTF_Font *font = TTF_OpenFont(FONT_NAME, FONT_POINT_SIZE);
     if (font) 
     {
-        // Render font to SDL_Surface
-        SDL_Color foregroundColor = {255,255,255,255}; // B,G,R,A
-        const char* message = "HELLO WORLD";
-        SDL_Surface* textImage = TTF_RenderText_Blended(font, message, foregroundColor);
-        if (textImage)
-        {
-            int bitsPerPixel = textImage->format->BitsPerPixel;
-            printf ("Image dimensions %dx%d, %d bits per pixel\n", textImage->w, textImage->h, bitsPerPixel);
-
-            // Create power of 2 dimensioned surface to satisfy GL
-            SDL_Surface* texture = SDL_CreateRGBSurface(0, nextPowerOfTwo(textImage->w + 1), nextPowerOfTwo(textImage->h + 1), bitsPerPixel, 0, 0, 0, 0);
-            
-            // Clear texture then copy text image into it
-            fontAspect = texture->w / (float)texture->h;
-            updateShader();
-            printf ("Texture dimensions %dx%d aspect %f\n", texture->w, texture->h, fontAspect);
-            memset(texture->pixels, 0x80, texture->w * texture->h * bitsPerPixel / 8);
-            SDL_Rect destRect = {1, 1, textImage->w + 1, textImage->h + 1};
-            SDL_BlitSurface(textImage, NULL, texture, &destRect);
+        // Render text to surface
+        SDL_Color foregroundColor = {255,255,255,255};
+        SDL_Surface* textImage8Bit = TTF_RenderText_Solid(font, message, foregroundColor);
+        debugPrintSurface(textImage8Bit, "textImage8Bit", false);
         
+        if (textImage8Bit)
+        {
+            // Convert surface from 8 to 32 bit for GL
+            SDL_Surface* textImage = SDL_ConvertSurfaceFormat(textImage8Bit, SDL_PIXELFORMAT_RGBA8888, 0);
+            debugPrintSurface(textImage, "textImage", false);
+
+            // Create power of 2 dimensioned texture for GL, clear it, and copy text image into it
+            SDL_Surface* texture = SDL_CreateRGBSurface(0, nextPowerOfTwo(textImage->w + 1), nextPowerOfTwo(textImage->h + 1), 
+                                                        textImage->format->BitsPerPixel, 0, 0, 0, 0);
+            memset(texture->pixels, 0x0, texture->w * texture->h * texture->format->BytesPerPixel);
+            SDL_Rect destRect = {1, 1, textImage->w + 1, textImage->h + 1};
+            SDL_SetSurfaceBlendMode(textImage, SDL_BLENDMODE_NONE);
+            SDL_BlitSurface(textImage, NULL, texture, &destRect);
+ 
+            // Emscripten/SDL bug? SDL_BlitSurface should copy source alpha when source surface is set to 
+            // SDL_BLENDMODE_NONE, however this is not happening, so fix it up here
+            unsigned int* pixels = (unsigned int*)texture->pixels;
+            for (int i = 0; i < texture->w*texture->h; ++i)
+            {
+                if (pixels[i] != 0)
+                    pixels[i] |= 0xff000000;
+                else
+                    pixels[i] = 0xffff0000;
+            }
+            debugPrintSurface(texture, "texture", false);
+
             // Determine GL texture format
             GLint format = -1;
-            if (bitsPerPixel == 24)
+            if (texture->format->BitsPerPixel == 24)
                 format = GL_RGB;
-            else if (bitsPerPixel == 32)
+            else if (texture->format->BitsPerPixel == 32)
                 format = GL_RGBA;
 
             if (format != -1)
             {
+                // Enable blending for texture alpha component
                 glEnable( GL_BLEND );
                 glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
@@ -203,7 +239,7 @@ void initTextTexture()
                 glBindTexture(GL_TEXTURE_2D, textureObj);
 
                 // Set the GL texture's wrapping and stretching properties
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -221,7 +257,27 @@ void initTextTexture()
         TTF_CloseFont(font);
     }
     else
-        printf("Failed to load font %s, due to %s\n", FONTNAME, TTF_GetError());
+        printf("Failed to load font %s, due to %s\n", FONT_NAME, TTF_GetError());
+}
+
+void redraw()
+{
+    // Clear screen
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Draw the vertex buffers
+    /*
+    glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
+    glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    */
+   
+    glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+    glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Swap front/back framebuffers
+    SDL_GL_SwapWindow(window);
 }
 
 // Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
@@ -461,18 +517,6 @@ void handleEvents()
     }
 }
 
-void redraw()
-{
-    // Clear screen
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Draw the vertex buffer
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    // Swap front/back framebuffers
-    SDL_GL_SwapWindow(window);
-}
-
 void mainLoop() 
 {    
     handleEvents();
@@ -498,8 +542,8 @@ int main(int argc, char** argv)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Initialize graphics
-    GLuint shaderProgram = initShader();
-    initGeometry(shaderProgram);
+    initShader();
+    initGeometry();
     initTextTexture();
 
     // Start the main loop
