@@ -1,9 +1,9 @@
 # emscripten-sdl2-ogles2
 *C++/SDL2/OpenGLES2 to Javascript/WebGL using Emscripten*
 
-This project is a collection of simple C++/SDL2/OpenGL graphical samples that run in the browser via Emscripten.  The long-term goal with this work is to preserve old OpenGL graphics demos, particularly those developed in the 1990s by Silicon Graphics.  The immediate goal however is to build up a collection of small samples that can serve as building blocks for porting these old demos to the browser.
+This project is a collection of C++/SDL2/OpenGL graphical samples that run in the browser via Emscripten.  The long-term goal with this work is to preserve old OpenGL graphics demos, particularly those developed in the 1990s by Silicon Graphics.  The immediate goal however is to build up a collection of small samples that can serve as building blocks for porting these old demos to the browser.
 
-With these demos running in the browser, hopefully they can live on for a long time as early examples of interactive 3D graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
+This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
 
 ## Try it
 
