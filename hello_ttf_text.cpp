@@ -59,10 +59,10 @@ GLuint triangleVbo = 0;
 
 GLfloat quadVertices[] = 
 {
-    0.0f, 2.0f, 0.0f,
-    2.0f, 2.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f,
-    2.0f, 0.0f, 0.0f
+    1.0f, 0.0f, 0.0f
 };
 GLuint quadVbo = 0;
 
@@ -75,7 +75,6 @@ const int FONT_POINT_SIZE = 36;
 const char* message = "HELLO WORLD";
 
 // Shader vars
-GLuint shaderProgram = 0;
 const GLint positionAttrib = 0;
 GLint shaderPan, shaderZoom, shaderAspect;
 GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f;
@@ -83,24 +82,18 @@ GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f;
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
 
-// Vertex shader
-const GLchar* vertexSource =
-    "uniform vec2 pan;                                   \n"
-    "uniform float zoom;                                 \n"
-    "uniform float aspect;                               \n"
+//  Quad vertex & fragment shaders
+GLuint quadShaderProgram = 0;
+const GLchar* quadVertexSource =
     "attribute vec4 position;                            \n"
     "varying vec2 texCoord;                              \n"
     "void main()                                         \n"
     "{                                                   \n"
     "    gl_Position = vec4(position.xyz, 1.0);          \n"
-    "    gl_Position.xy += pan;                          \n"
-    "    gl_Position.xy *= zoom;                         \n"
-    "    gl_Position.y *= aspect;                        \n"
     "    texCoord = vec2(position.x , -position.y);      \n"
     "}                                                   \n";
 
-// Fragment/pixel shader
-const GLchar* fragmentSource =
+const GLchar* quadFragmentSource =
     "precision mediump float;                            \n"
     "varying vec2 texCoord;                              \n"
     "uniform sampler2D texSampler;                       \n"
@@ -108,6 +101,32 @@ const GLchar* fragmentSource =
     "{                                                   \n"
     "    gl_FragColor = texture2D(texSampler, texCoord); \n"
     "}                                                   \n";
+
+// Triangle vertex & fragment shaders
+GLuint triShaderProgram = 0;
+const GLchar* triVertexSource =
+    "uniform vec2 pan;                             \n"
+    "uniform float zoom;                           \n"
+    "uniform float aspect;                         \n"
+    "attribute vec4 position;                      \n"
+    "varying vec3 color;                           \n"
+    "void main()                                   \n"
+    "{                                             \n"
+    "    gl_Position = vec4(position.xyz, 1.0);    \n"
+    "    gl_Position.xy += pan;                    \n"
+    "    gl_Position.xy *= zoom;                   \n"
+    "    gl_Position.y *= aspect;                  \n"
+    "    color = gl_Position.xyz + vec3(0.5);      \n"
+    "}                                             \n";
+
+const GLchar* triFragmentSource =
+    "precision mediump float;                     \n"
+    "varying vec3 color;                          \n"
+    "void main()                                  \n"
+    "{                                            \n"
+    "    gl_FragColor = vec4 ( color, 1.0 );      \n"
+    "}                                            \n";
+
 
 float clamp (float val, float lo, float hi)
 {
@@ -122,14 +141,15 @@ int nextPowerOfTwo(int val)
     return power;
 }
 
-void updateShader()
+void updateShaderUniforms()
 {
+    glUseProgram(triShaderProgram);
     glUniform2fv(shaderPan, 1, pan);
     glUniform1f(shaderZoom, zoom); 
     glUniform1f(shaderAspect, aspect);
 }
 
-void initShader()
+GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
 {
     // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -141,20 +161,28 @@ void initShader()
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
 
-    // Link vertex and fragment shader into shader program and use it
-    shaderProgram = glCreateProgram();
+    // Link vertex and fragment shader into shader program
+    GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glBindAttribLocation(shaderProgram, positionAttrib, "position");
     glEnableVertexAttribArray(positionAttrib);
     glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
 
-    // Get shader variables and initalize them
-    shaderPan = glGetUniformLocation(shaderProgram, "pan");
-    shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
-    shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
-    updateShader();
+    return shaderProgram;
+}
+
+void initShaders()
+{
+    // Compile & link shaders
+    quadShaderProgram = initShader(quadVertexSource, quadFragmentSource);
+    triShaderProgram = initShader(triVertexSource, triFragmentSource);
+
+    // Get tri shader variables and initalize them
+    shaderPan = glGetUniformLocation(triShaderProgram, "pan");
+    shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
+    shaderAspect = glGetUniformLocation(triShaderProgram, "aspect");
+    updateShaderUniforms();
 }
 
 void initGeometry()
@@ -215,7 +243,7 @@ void initTextTexture()
                 if (pixels[i] != 0)
                     pixels[i] |= 0xff000000;
                 else
-                    pixels[i] = 0xffff0000;
+                    pixels[i] = 0x00000000;
             }
             debugPrintSurface(texture, "texture", false);
 
@@ -266,12 +294,12 @@ void redraw()
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw the vertex buffers
-    /*
+    glUseProgram(triShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    */
-   
+    
+    glUseProgram(quadShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -325,7 +353,7 @@ void windowResizeEvent(int width, int height)
     glViewport(0, 0, windowWidth, windowHeight);
     aspect = windowWidth / (float)windowHeight; 
 
-    updateShader();
+    updateShaderUniforms();
 }
 
 void zoomEventMouse(bool mouseWheelDown, int x, int y)
@@ -348,7 +376,7 @@ void zoomEventMouse(bool mouseWheelDown, int x, int y)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    updateShaderUniforms();
 }
 
 void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
@@ -371,7 +399,7 @@ void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    updateShaderUniforms();
 }
 
 void panEventMouse(int x, int y)
@@ -385,7 +413,7 @@ void panEventMouse(int x, int y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
     
-    updateShader();
+    updateShaderUniforms();
 }
 
 void panEventFinger(float x, float y)
@@ -399,7 +427,7 @@ void panEventFinger(float x, float y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
 
-    updateShader();
+    updateShaderUniforms();
 }
 
 void handleEvents()
@@ -542,7 +570,7 @@ int main(int argc, char** argv)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Initialize graphics
-    initShader();
+    initShaders();
     initGeometry();
     initTextTexture();
 
