@@ -247,7 +247,6 @@ void initTextTexture()
         // Render text to surface
         SDL_Color foregroundColor = {255,255,255,255};
         SDL_Surface* textImage8Bit = TTF_RenderText_Solid(font, message, foregroundColor);
-        debugPrintSurface(textImage8Bit, "textImage8Bit", false);
         
         if (textImage8Bit)
         {
