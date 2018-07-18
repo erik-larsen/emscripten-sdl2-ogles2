@@ -11,7 +11,7 @@
 //     emrun hello_ttf_text_debug.html
 //
 // Result:
-//     A text triangle.  Left mouse pans, mouse wheel zooms in/out.  Window is resizable.
+//     A text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
 //
 #include <exception>
 #include <algorithm>
@@ -71,13 +71,13 @@ GLuint textureObj = 0;
 
 // Text
 const char* FONT_NAME = "LiberationSansBold.ttf";
-const int FONT_POINT_SIZE = 36;
-const char* message = "HELLO WORLD";
+const int FONT_POINT_SIZE = 64;
+const char* message = "Hello Text";
 
 // Shader vars
 const GLint positionAttrib = 0;
-GLint shaderPan, shaderZoom, shaderAspect;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f;
+GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize, shaderTexSize;
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f}, texSize[2] = {0.0f, 0.0f};
 
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
@@ -85,13 +85,29 @@ GLfloat basePan[2] = {0.0f, 0.0f};
 //  Quad vertex & fragment shaders
 GLuint quadShaderProgram = 0;
 const GLchar* quadVertexSource =
-    "attribute vec4 position;                            \n"
-    "varying vec2 texCoord;                              \n"
-    "void main()                                         \n"
-    "{                                                   \n"
-    "    gl_Position = vec4(position.xyz, 1.0);          \n"
-    "    texCoord = vec2(position.x , -position.y);      \n"
-    "}                                                   \n";
+    "attribute vec4 position;                                   \n"
+    "varying vec2 texCoord;                                     \n"
+    "uniform vec2 viewport;                                     \n"
+    "uniform vec2 textSize;                                     \n"
+    "uniform vec2 texSize;                                      \n"
+    "void main()                                                \n"
+    "{                                                          \n"
+    "    gl_Position = vec4(position.xyz, 1.0);                 \n"
+    "    gl_Position.x *= textSize.x;                           \n"
+    "    gl_Position.y *= textSize.y;                           \n"
+    "                                                           \n"
+    "    // Translate to lower left viewport                    \n"
+    "    gl_Position.x -= viewport.x / 2.0;                     \n"
+    "    gl_Position.y -= viewport.y / 2.0;                     \n"
+    "                                                           \n"
+    "    // Ortho projection                                    \n"
+    "    gl_Position.x += 1.0;                                  \n"
+    "    gl_Position.x *= 2.0 / viewport.x;                     \n"
+    "    gl_Position.y += 1.0;                                  \n"
+    "    gl_Position.y *= 2.0 / viewport.y;                     \n"
+    "                                                           \n"
+    "    texCoord = vec2(position.x * textSize.x / texSize.x , -position.y * textSize.y / texSize.y);\n"
+    "}                                                          \n";
 
 const GLchar* quadFragmentSource =
     "precision mediump float;                            \n"
@@ -143,6 +159,11 @@ int nextPowerOfTwo(int val)
 
 void updateShaderUniforms()
 {
+    glUseProgram(quadShaderProgram);
+    glUniform2fv(shaderViewport, 1, viewport);
+    glUniform2fv(shaderTextSize, 1, textSize);
+    glUniform2fv(shaderTexSize, 1, texSize);
+
     glUseProgram(triShaderProgram);
     glUniform2fv(shaderPan, 1, pan);
     glUniform1f(shaderZoom, zoom); 
@@ -178,10 +199,15 @@ void initShaders()
     quadShaderProgram = initShader(quadVertexSource, quadFragmentSource);
     triShaderProgram = initShader(triVertexSource, triFragmentSource);
 
-    // Get tri shader variables and initalize them
+    // Get shader variables and initalize them
+    shaderViewport = glGetUniformLocation(quadShaderProgram, "viewport");
+    shaderTextSize = glGetUniformLocation(quadShaderProgram, "textSize");
+    shaderTexSize = glGetUniformLocation(quadShaderProgram, "texSize");
+
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(triShaderProgram, "aspect");
+    
     updateShaderUniforms();
 }
 
@@ -227,11 +253,11 @@ void initTextTexture()
             SDL_Surface* textImage = SDL_ConvertSurfaceFormat(textImage8Bit, SDL_PIXELFORMAT_RGBA8888, 0);
             debugPrintSurface(textImage, "textImage", false);
 
-            // Create power of 2 dimensioned texture for GL, clear it, and copy text image into it
-            SDL_Surface* texture = SDL_CreateRGBSurface(0, nextPowerOfTwo(textImage->w + 1), nextPowerOfTwo(textImage->h + 1), 
+            // Create power of 2 dimensioned texture for GL with 1 texel border, clear it, and copy text image into it
+            SDL_Surface* texture = SDL_CreateRGBSurface(0, nextPowerOfTwo(textImage->w + 2), nextPowerOfTwo(textImage->h + 2), 
                                                         textImage->format->BitsPerPixel, 0, 0, 0, 0);
             memset(texture->pixels, 0x0, texture->w * texture->h * texture->format->BytesPerPixel);
-            SDL_Rect destRect = {1, 1, textImage->w + 1, textImage->h + 1};
+            SDL_Rect destRect = {1, texture->h - textImage->h - 1, textImage->w + 1, texture->h - 1};
             SDL_SetSurfaceBlendMode(textImage, SDL_BLENDMODE_NONE);
             SDL_BlitSurface(textImage, NULL, texture, &destRect);
  
@@ -243,7 +269,7 @@ void initTextTexture()
                 if (pixels[i] != 0)
                     pixels[i] |= 0xff000000;
                 else
-                    pixels[i] = 0x00000000;
+                    pixels[i] = 0x80808080;
             }
             debugPrintSurface(texture, "texture", false);
 
@@ -267,7 +293,7 @@ void initTextTexture()
                 glBindTexture(GL_TEXTURE_2D, textureObj);
 
                 // Set the GL texture's wrapping and stretching properties
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -277,6 +303,13 @@ void initTextTexture()
                 glTexImage2D(GL_TEXTURE_2D, 0, format, 
                              texture->w, texture->h, 
                              0, format, GL_UNSIGNED_BYTE, texture->pixels);
+
+                // Update quad shader
+                texSize[0] = (GLfloat)texture->w;
+                texSize[1] = (GLfloat)texture->h;
+                textSize[0] = (GLfloat)textImage->w + 2;
+                textSize[1] = (GLfloat)textImage->h + 2;
+                updateShaderUniforms();
             }
                                     
             SDL_FreeSurface (textImage);        
@@ -293,12 +326,13 @@ void redraw()
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw the vertex buffers
+    // Draw the triangle VBO with a colorful shader
     glUseProgram(triShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     
+    // Draw the quad VBO with a text texture shader
     glUseProgram(quadShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -308,14 +342,14 @@ void redraw()
     SDL_GL_SwapWindow(window);
 }
 
-// Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
+// Convert from normalized viewport coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
 void normWindowToDeviceCoords (float normWinX, float normWinY, float& deviceX, float& deviceY)
 {
     deviceX = (normWinX - 0.5f) * 2.0f;
     deviceY = (1.0f - normWinY - 0.5f) * 2.0f;
 }
 
-// Convert from window coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
+// Convert from viewport coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
 void windowToDeviceCoords (int winX, int winY, float& deviceX, float& deviceY)
 {
     normWindowToDeviceCoords(winX / (float)windowWidth,  winY / (float)windowHeight, deviceX, deviceY);
@@ -328,7 +362,7 @@ void deviceToWorldCoords (float deviceX, float deviceY, float& worldX, float& wo
     worldY = deviceY / aspect / zoom - pan[1];
 }
 
-// Convert from window coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to world coords ([-inf, inf], [-inf, inf])
+// Convert from viewport coords (x,y) in ([0, windowWidth], [windowHeight, 0]) to world coords ([-inf, inf], [-inf, inf])
 void windowToWorldCoords(int winX, int winY, float& worldX, float& worldY)
 {
     float deviceX, deviceY;
@@ -336,7 +370,7 @@ void windowToWorldCoords(int winX, int winY, float& worldX, float& worldY)
     deviceToWorldCoords(deviceX, deviceY, worldX, worldY);
 }
 
-// Convert from normalized window coords (x,y) in in ([0.0, 1.0], [1.0, 0.0]) to world coords ([-inf, inf], [-inf, inf])
+// Convert from normalized viewport coords (x,y) in in ([0.0, 1.0], [1.0, 0.0]) to world coords ([-inf, inf], [-inf, inf])
 void normWindowToWorldCoords(float normWinX, float normWinY, float& worldX, float& worldY)
 {
     float deviceX, deviceY;
@@ -352,6 +386,8 @@ void windowResizeEvent(int width, int height)
     // Update viewport and aspect ratio
     glViewport(0, 0, windowWidth, windowHeight);
     aspect = windowWidth / (float)windowHeight; 
+    viewport[0] = (float)windowWidth;
+    viewport[1] = (float)windowHeight;
 
     updateShaderUniforms();
 }
