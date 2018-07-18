@@ -77,7 +77,7 @@ const char* message = "Hello Text";
 // Shader vars
 const GLint positionAttrib = 0;
 GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize, shaderTexSize;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f}, texSize[2] = {0.0f, 0.0f};
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.8f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f}, texSize[2] = {0.0f, 0.0f};
 
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
@@ -106,17 +106,19 @@ const GLchar* quadVertexSource =
     "    gl_Position.y += 1.0;                                  \n"
     "    gl_Position.y *= 2.0 / viewport.y;                     \n"
     "                                                           \n"
-    "    texCoord = vec2(position.x * textSize.x / texSize.x , -position.y * textSize.y / texSize.y);\n"
+    "    // Text subrectangle from overall texture              \n"
+    "    texCoord.x = position.x * textSize.x / texSize.x;      \n"
+    "    texCoord.y = -position.y * textSize.y / texSize.y;     \n"
     "}                                                          \n";
 
 const GLchar* quadFragmentSource =
-    "precision mediump float;                            \n"
-    "varying vec2 texCoord;                              \n"
-    "uniform sampler2D texSampler;                       \n"
-    "void main()                                         \n"
-    "{                                                   \n"
-    "    gl_FragColor = texture2D(texSampler, texCoord); \n"
-    "}                                                   \n";
+    "precision mediump float;                                   \n"
+    "varying vec2 texCoord;                                     \n"
+    "uniform sampler2D texSampler;                              \n"
+    "void main()                                                \n"
+    "{                                                          \n"
+    "    gl_FragColor = texture2D(texSampler, texCoord);        \n"
+    "}                                                          \n";
 
 // Triangle vertex & fragment shaders
 GLuint triShaderProgram = 0;
