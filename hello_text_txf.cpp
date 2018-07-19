@@ -614,6 +614,7 @@ int main(int argc, char** argv)
 
     // Start the main loop
 #ifdef __EMSCRIPTEN__
+    printf ("Pixel ratio = %f\n", emscripten_get_device_pixel_ratio());
     emscripten_set_main_loop(mainLoop, 0, true);
 #else
     while(true) 
