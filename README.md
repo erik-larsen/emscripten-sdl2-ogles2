@@ -13,7 +13,7 @@ This work is inspired in part by the [preservation of classic arcade games in th
 
 [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Like Hello Triangle, but the triangle is textured with an image file.
 
-[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_ttf_text_debug.html) - Like Hello Triangle, but the triangle contains text rendered using a TrueType font.
+[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but the triangle contains text rendered using a TrueType font.
 
 ## Why Emscripten?  
 
