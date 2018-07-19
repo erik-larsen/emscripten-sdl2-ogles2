@@ -1,5 +1,5 @@
 //
-// Emscripten/SDL2/OpenGLES2 sample that demonstrates textures 
+// Emscripten/SDL2/OpenGLES2 sample that displays a texture created from an image file
 //
 // Setup:
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html

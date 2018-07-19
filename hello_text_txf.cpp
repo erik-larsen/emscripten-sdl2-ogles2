@@ -1,14 +1,15 @@
 //
 // Emscripten/SDL2/OpenGLES2 sample that displays Texfont text by loading a font and building a texture atlas
+// https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
 //
 // Setup:
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_ttf_text.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=0 --preload-file LiberationSansBold.ttf -o hello_ttf_text_debug.html
+//     emcc hello_text_txf.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=0 --preload-file LiberationSansBold.ttf -o hello_text_txf_debug.html
 // 
 // Run:
-//     emrun hello_ttf_text_debug.html
+//     emrun hello_text_txf_debug.html
 //
 // Result:
 //     A text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
@@ -591,7 +592,7 @@ void mainLoop()
 int main(int argc, char** argv)
 {
     // Create SDL window
-    window = SDL_CreateWindow("hello_ttf_text", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window = SDL_CreateWindow("hello_text_txf", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
     windowID = SDL_GetWindowID(window);
 
