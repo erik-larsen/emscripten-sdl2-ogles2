@@ -7,7 +7,7 @@ This work is inspired in part by the [preservation of classic arcade games in th
 
 ## Try it
 
-[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Demonstrates minimal code needed to draw a colorful triangle with shaders, with support for mouse and touch input.  Controls: 
+[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Minimal code needed to draw a triangle with shaders, with support for mouse and touch input.  Controls: 
 - Pan with left mouse or finger touch
 - Zoom with mouse wheel or pinch gesture.
 
