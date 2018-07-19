@@ -1,5 +1,5 @@
 //
-// Minimal C++/SDL2/OpenGLES2 sample that Emscripten transpiles into Javascript/WebGL.
+// Emscripten/SDL2/OpenGLES2 sample that demonstrates simple geometry and shaders, mouse and touch input, and window resizing
 //
 // Setup:
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
