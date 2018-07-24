@@ -7,6 +7,8 @@ The long-term goal with this work is to preserve old graphics demos, particularl
 
 ## Try it
 
+![](media/hello_triangle.png)
+
 [Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Minimal code needed to draw a colorful triangle using shaders, with support for mouse and touch input.  
 
 Controls: 
