@@ -5,21 +5,37 @@ This project is a collection of C++/SDL2/OpenGL samples that run in the browser 
 
 The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
 
+
 ## Try it
 
-![](media/hello_triangle.png)
+### [Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
 
-[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Minimal code needed to draw a colorful triangle using shaders, with support for mouse and touch input.  
+![Hello Triangle](media/hello_triangle.png)
+
+Demonstrates a colorful triangle using shaders, with support for mouse and touch input.  
 
 Controls: 
 - Pan with left mouse or finger touch
 - Zoom with mouse wheel or pinch gesture.
 
-[Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Like Hello Triangle, but the triangle is textured with an image file.
+### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html)
 
-[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but a quad with TrueType text is also drawn.
+![Hello Texture](media/hello_texture.png)
 
-[Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf_debug.html) - Like Hello Text, but the quad is drawn using a font texture atlas loaded from a Texfont (.txf) file.
+Demonstrates a textured triangle, using SDL to load an image from a file.
+
+### [Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html)
+
+![Hello Text](media/hello_text_ttf.png)
+
+Demonstrates TrueType text on a quad, using SDL to render a string into a texture.
+
+### [Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf_debug.html)
+
+![Hello Texture Atlas](media/hello_text_txf.png)
+
+Demonstrates Texfont text on a quad, loading a font texture atlas from a .txf font file.  
+
 
 ## Why Emscripten?  
 
