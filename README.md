@@ -6,7 +6,7 @@ This project is a collection of C++/SDL2/OpenGL samples that run in the browser 
 The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
 
 
-## Try it
+## Try it!
 
 ### [Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
 
