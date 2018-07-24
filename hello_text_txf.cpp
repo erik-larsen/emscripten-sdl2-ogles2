@@ -6,7 +6,7 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_text_txf.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=0 --preload-file LiberationSansBold.ttf -o hello_text_txf_debug.html
+//     emcc hello_text_txf.cpp texfont.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 --preload-file rockfont.txf -o hello_text_txf_debug.html
 // 
 // Run:
 //     emrun hello_text_txf_debug.html
@@ -19,14 +19,13 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_opengles2.h>
-#else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_opengles2.h>
-#endif
+
+#include "texfont.h"
 
 // Mouse input
 const float MOUSE_WHEEL_ZOOM_DELTA = 0.05f;
@@ -71,8 +70,6 @@ GLuint quadVbo = 0;
 GLuint textureObj = 0;
 
 // Text
-const char* FONT_NAME = "LiberationSansBold.ttf";
-const int FONT_POINT_SIZE = 64;
 const char* message = "Hello Text";
 
 // Shader vars
@@ -109,7 +106,7 @@ const GLchar* quadVertexSource =
     "                                                           \n"
     "    // Text subrectangle from overall texture              \n"
     "    texCoord.x = position.x * textSize.x / texSize.x;      \n"
-    "    texCoord.y = -position.y * textSize.y / texSize.y;     \n"
+    "    texCoord.y = position.y * textSize.y / texSize.y;     \n"
     "}                                                          \n";
 
 const GLchar* quadFragmentSource =
@@ -239,88 +236,59 @@ void debugPrintSurface(SDL_Surface* surface, const char* name, bool dumpPixels)
 
 void initTextTexture()
 {
-    TTF_Init();
+    // Determine GL texture format
+    GLint format = GL_RGBA;
 
-    // Load the font
-    TTF_Font *font = TTF_OpenFont(FONT_NAME, FONT_POINT_SIZE);
-    if (font) 
+    TexFont *txf = txfLoadFont("rockfont.txf");
+    if (txf)
     {
-        // Render text to surface
-        SDL_Color foregroundColor = {255,255,255,255};
-        SDL_Surface* textImage8Bit = TTF_RenderText_Solid(font, message, foregroundColor);
+        printf("txf dimensions %dx%d\n", txf->tex_width, txf->tex_height);
+
+        // Enable blending for texture alpha component
         
-        if (textImage8Bit)
+        glEnable( GL_BLEND );
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+        // Generate a GL texture object
+        glGenTextures(1, &textureObj);
+
+        // Bind GL texture
+        glBindTexture(GL_TEXTURE_2D, textureObj);
+
+        // Set the GL texture's wrapping and stretching properties
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        unsigned int* txf_pixels = new unsigned int[txf->tex_width * txf->tex_height];
+        for (int i = 0; i < txf->tex_width * txf->tex_height; ++i)
         {
-            // Convert surface from 8 to 32 bit for GL
-            SDL_Surface* textImage = SDL_ConvertSurfaceFormat(textImage8Bit, SDL_PIXELFORMAT_RGBA8888, 0);
-            debugPrintSurface(textImage, "textImage", false);
-
-            // Create power of 2 dimensioned texture for GL with 1 texel border, clear it, and copy text image into it
-            SDL_Surface* texture = SDL_CreateRGBSurface(0, nextPowerOfTwo(textImage->w + 2), nextPowerOfTwo(textImage->h + 2), 
-                                                        textImage->format->BitsPerPixel, 0, 0, 0, 0);
-            memset(texture->pixels, 0x0, texture->w * texture->h * texture->format->BytesPerPixel);
-            SDL_Rect destRect = {1, texture->h - textImage->h - 1, textImage->w + 1, texture->h - 1};
-            SDL_SetSurfaceBlendMode(textImage, SDL_BLENDMODE_NONE);
-            SDL_BlitSurface(textImage, NULL, texture, &destRect);
- 
-            // Emscripten/SDL bug? SDL_BlitSurface should copy source alpha when source surface is set to 
-            // SDL_BLENDMODE_NONE, however this is not happening, so fix it up here
-            unsigned int* pixels = (unsigned int*)texture->pixels;
-            for (int i = 0; i < texture->w*texture->h; ++i)
+            if (txf->teximage[i])
             {
-                if (pixels[i] != 0)
-                    pixels[i] |= 0xff000000;
-                else
-                    pixels[i] = 0x80808080;
+                //txf_pixels[i] = 0xffffffff;
+                unsigned char c = txf->teximage[i];
+                txf_pixels[i] = c | c << 8 | c << 16 | c << 24;
+                //txf_pixels[i] = c | c << 8 | c << 16 | (c < 128 ? 0x0 : 0xff) << 24;
             }
-            debugPrintSurface(texture, "texture", false);
+            else
+                txf_pixels[i] = 0;// 0x80808080;
+        }
 
-            // Determine GL texture format
-            GLint format = -1;
-            if (texture->format->BitsPerPixel == 24)
-                format = GL_RGB;
-            else if (texture->format->BitsPerPixel == 32)
-                format = GL_RGBA;
+        // Copy SDL surface image to GL texture
+        glTexImage2D(GL_TEXTURE_2D, 0, format, 
+                    txf->tex_width, txf->tex_height, 
+                    0, format, GL_UNSIGNED_BYTE, txf_pixels);
 
-            if (format != -1)
-            {
-                // Enable blending for texture alpha component
-                glEnable( GL_BLEND );
-                glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        texSize[0] = textSize[0] = (GLfloat)txf->tex_width;
+        texSize[1] = textSize[1] = (GLfloat)txf->tex_height;
+        updateShaderUniforms();
 
-                // Generate a GL texture object
-                glGenTextures(1, &textureObj);
-
-                // Bind GL texture
-                glBindTexture(GL_TEXTURE_2D, textureObj);
-
-                // Set the GL texture's wrapping and stretching properties
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-                // Copy SDL surface image to GL texture
-                glTexImage2D(GL_TEXTURE_2D, 0, format, 
-                             texture->w, texture->h, 
-                             0, format, GL_UNSIGNED_BYTE, texture->pixels);
-
-                // Update quad shader
-                texSize[0] = (GLfloat)texture->w;
-                texSize[1] = (GLfloat)texture->h;
-                textSize[0] = (GLfloat)textImage->w + 2;
-                textSize[1] = (GLfloat)textImage->h + 2;
-                updateShaderUniforms();
-            }
-                                    
-            SDL_FreeSurface (textImage);        
-            SDL_FreeSurface (texture);        
-        }  
-        TTF_CloseFont(font);
+        delete[] txf_pixels;
     }
     else
-        printf("Failed to load font %s, due to %s\n", FONT_NAME, TTF_GetError());
+        printf("error loading txf\n");
 }
 
 void redraw()

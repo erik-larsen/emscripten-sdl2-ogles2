@@ -1,3 +1,4 @@
 # Exclude emscripten generated files
 *.vscode
 *.mem
+.DS_Store
