@@ -6,7 +6,7 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_text_txf.cpp texfont.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 --preload-file rockfont.txf -o hello_text_txf_debug.html
+//     emcc hello_text_txf.cpp texfont.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 --preload-file media/rockfont.txf -o hello_text_txf_debug.html
 // 
 // Run:
 //     emrun hello_text_txf_debug.html
@@ -239,7 +239,7 @@ void initTextTexture()
     // Determine GL texture format
     GLint format = GL_RGBA;
 
-    TexFont *txf = txfLoadFont("rockfont.txf");
+    TexFont *txf = txfLoadFont("media/rockfont.txf");
     if (txf)
     {
         printf("txf dimensions %dx%d\n", txf->tex_width, txf->tex_height);

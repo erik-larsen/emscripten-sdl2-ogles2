@@ -5,9 +5,9 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build on Mac/Linux:
-//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file texmap.png -o hello_texture_debug.html
+//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture_debug.html
 // Build on Windows:
-//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file texmap.png -o hello_texture_debug.html
+//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture_debug.html
 // 
 // Run:
 //     emrun hello_texture_debug.html
@@ -38,7 +38,7 @@ GLfloat triangleVertices[] =
     -0.5f, -0.5f, 0.0f,
     0.5f, -0.5f, 0.0f
 };
-const char* TEXTURE_FILENAME = "texmap.png";
+const char* TEXTURE_FILENAME = "media/texmap.png";
 GLuint textureObj = 0;
 
 // Mouse input

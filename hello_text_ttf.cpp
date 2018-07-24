@@ -5,7 +5,7 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc hello_text_ttf.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=0 --preload-file LiberationSansBold.ttf -o hello_text_ttf_debug.html
+//     emcc hello_text_ttf.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=0 --preload-file media/LiberationSansBold.ttf -o hello_text_ttf_debug.html
 // 
 // Run:
 //     emrun hello_text_ttf_debug.html
@@ -67,7 +67,7 @@ GLuint quadVbo = 0;
 GLuint textureObj = 0;
 
 // Text
-const char* FONT_NAME = "LiberationSansBold.ttf";
+const char* FONT_NAME = "media/LiberationSansBold.ttf";
 const int FONT_POINT_SIZE = 64;
 const char* message = "Hello Text";
 
