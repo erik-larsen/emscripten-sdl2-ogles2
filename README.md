@@ -43,7 +43,7 @@ Running an app in the browser is the ultimate convenience for the user - no manu
 
 ## Why SDL2? 
 
-These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.), SDL provides a cross-platform library to access this, and Emscripten has an SDL port.
+These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.). SDL provides a cross-platform library to access this, and Emscripten has an SDL port.
 
 ## Why OpenGLES2?  
 
