@@ -15,9 +15,9 @@ Controls:
 
 [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Like Hello Triangle, but the triangle is textured with an image file.
 
-[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but a quad with text is drawn using a TrueType font.
+[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but a quad with TrueType text is also drawn.
 
-Hello Texture Atlas (coming soon) - Like Hello Text, but now the quad is drawn using a font texture atlas loaded from a Texfont (.txf) file.
+[Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf_debug.html) - Like Hello Text, but the quad is drawn using a font texture atlas loaded from a Texfont (.txf) file.
 
 ## Why Emscripten?  
 
