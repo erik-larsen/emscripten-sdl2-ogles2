@@ -18,14 +18,11 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_opengles2.h>
-#else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_opengles2.h>
-#endif
 
 // Mouse input
 const float MOUSE_WHEEL_ZOOM_DELTA = 0.05f;

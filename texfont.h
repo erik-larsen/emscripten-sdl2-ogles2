@@ -4,13 +4,13 @@
 #define TXF_FORMAT_BITMAP	1
 
 typedef struct {
-    unsigned short c;       /* Potentially support 16-bit glyphs. */
+    unsigned short c;       // Potentially support 16-bit glyphs.
     unsigned char width;
     unsigned char height;
     signed char xoffset;
     signed char yoffset;
     signed char advance;
-    char dummy;           /* Space holder for alignment reasons. */
+    char dummy;             // Space holder for alignment reasons.
     short x;
     short y;
 } TexGlyphInfo;

@@ -1,27 +1,31 @@
 # emscripten-sdl2-ogles2
 *C++/SDL2/OpenGLES2 to Javascript/WebGL using Emscripten*
 
-This project is a collection of C++/SDL2/OpenGL graphical samples that run in the browser via Emscripten.  The long-term goal with this work is to preserve old OpenGL graphics demos, particularly those developed in the 1990s by Silicon Graphics.  The immediate goal however is to build up a collection of small samples that can serve as building blocks for porting these old demos to the browser.
+This project is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These samples can serve as building blocks to aid in porting C++ graphics apps to the browser.
 
-This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
+The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
 
 ## Try it
 
-[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Minimal code needed to draw a triangle with shaders, with support for mouse and touch input.  Controls: 
+[Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) - Minimal code needed to draw a colorful triangle using shaders, with support for mouse and touch input.  
+
+Controls: 
 - Pan with left mouse or finger touch
 - Zoom with mouse wheel or pinch gesture.
 
 [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html) - Like Hello Triangle, but the triangle is textured with an image file.
 
-[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but the triangle contains text rendered using a TrueType font.
+[Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html) - Like Hello Triangle, but a quad with text is drawn using a TrueType font.
+
+Hello Texture Atlas (coming soon) - Like Hello Text, but now the quad is drawn using a font texture atlas loaded from a Texfont (.txf) file.
 
 ## Why Emscripten?  
 
-These demos need to run in the browser and porting to Javascript is no fun.  Running an app in the browser is the ultimate convenience for the user (nothing to download and install, works on desktop, tablet, and phone).  Better to have Emscripten do the work to produce optimal Javascript/WASM, than doing the boring and error-prone work of hand porting code.  Some porting work will still be necessary, but only to port into cross-platform C++.
+Running an app in the browser is the ultimate convenience for the user - no manual download and install is necessary and it will run on desktop, tablet, and phone.  Better to have Emscripten do the work to produce optimal Javascript/WASM, than doing the boring and error-prone work of hand porting C++ code.  Some porting work will still be necessary, but only to port into cross-platform C++.
 
 ## Why SDL2? 
 
-These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.), SDL provides a cross-platform library to access this, and Emscripten runs SDL in the browser.
+These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.), SDL provides a cross-platform library to access this, and Emscripten has an SDL port.
 
 ## Why OpenGLES2?  
 

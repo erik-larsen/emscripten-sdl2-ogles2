@@ -245,7 +245,6 @@ void initTextTexture()
         printf("txf dimensions %dx%d\n", txf->tex_width, txf->tex_height);
 
         // Enable blending for texture alpha component
-        
         glEnable( GL_BLEND );
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
