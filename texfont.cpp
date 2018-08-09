@@ -1,3 +1,10 @@
+//
+// This is a fork of GLUT TexFont code, ported to C++ and OpenGLES.
+//
+// https://github.com/markkilgard/glut/tree/master/progs/texfont
+// https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
+//
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -9,19 +16,25 @@
 //#define TXF_DEBUG 1
 
 // byte swap a 32-bit value 
-#define SWAPL(x, n) { \
-                    n = ((char *) (x))[0];\
-                    ((char *) (x))[0] = ((char *) (x))[3];\
-                    ((char *) (x))[3] = n;\
-                    n = ((char *) (x))[1];\
-                    ((char *) (x))[1] = ((char *) (x))[2];\
-                    ((char *) (x))[2] = n; }
+inline void byteSwap32Bit(int* val)
+{
+    char *valBytes = (char *)val;
+    char temp = valBytes[0];
+    valBytes[0] = valBytes[3];
+    valBytes[3] = temp;
+    temp = valBytes[1];
+    valBytes[1] = valBytes[2];
+    valBytes[2] = temp; 
+}
 
-// byte swap a short 
-#define SWAPS(x, n) { \
-                    n = ((char *) (x))[0];\
-                    ((char *) (x))[0] = ((char *) (x))[1];\
-                    ((char *) (x))[1] = n; }
+// byte swap a 16-bit value (short)
+inline void byteSwap16Bit(short* val)
+{
+    char *valBytes = (char *)val;
+    char temp = valBytes[0];
+    valBytes[0] = valBytes[1];
+    valBytes[1] = temp;
+}
 
 static char *lastError;
 
@@ -122,15 +135,14 @@ txfLoadFont(const char *filename)
     got = fread(&txf->num_glyphs, sizeof(int), 1, file);
     TXF_LOAD_EXPECT_GOT(1);
 
-    char tmp;
     if (swap) 
     {
-        SWAPL(&format, tmp);
-        SWAPL(&txf->tex_width, tmp);
-        SWAPL(&txf->tex_height, tmp);
-        SWAPL(&txf->max_ascent, tmp);
-        SWAPL(&txf->max_descent, tmp);
-        SWAPL(&txf->num_glyphs, tmp);
+        byteSwap32Bit(&format);
+        byteSwap32Bit(&txf->tex_width);
+        byteSwap32Bit(&txf->tex_height);
+        byteSwap32Bit(&txf->max_ascent);
+        byteSwap32Bit(&txf->max_descent);
+        byteSwap32Bit(&txf->num_glyphs);
     }
     txf->tgi = new TexGlyphInfo[txf->num_glyphs];
     if (txf->tgi == NULL)
@@ -140,12 +152,13 @@ txfLoadFont(const char *filename)
     got = fread(txf->tgi, sizeof(TexGlyphInfo), txf->num_glyphs, file);
     TXF_LOAD_EXPECT_GOT(txf->num_glyphs);
 
-    if (swap) {
+    if (swap) 
+    {
         for (int i = 0; i < txf->num_glyphs; i++) 
         {
-            SWAPS(&txf->tgi[i].c, tmp);
-            SWAPS(&txf->tgi[i].x, tmp);
-            SWAPS(&txf->tgi[i].y, tmp);
+            byteSwap16Bit((short*)&txf->tgi[i].c);
+            byteSwap16Bit(&txf->tgi[i].x);
+            byteSwap16Bit(&txf->tgi[i].y);
         }
     }
     txf->tgvi = new TexGlyphVertexInfo[txf->num_glyphs];
@@ -205,6 +218,7 @@ txfLoadFont(const char *filename)
                 if (txf->teximage == NULL)
                     TXF_LOAD_ERROR("out of memory.");
                 got = fread(txf->teximage, 1, txf->tex_width * txf->tex_height, file);
+
                 TXF_LOAD_EXPECT_GOT(txf->tex_width * txf->tex_height);
 
                 #ifdef TXF_DEBUG
@@ -215,6 +229,7 @@ txfLoadFont(const char *filename)
                 #endif
             }
             break;
+            
         case TXF_FORMAT_BITMAP:
             {
                 int width = txf->tex_width;
@@ -337,6 +352,8 @@ txfRenderGlyph(TexFont * txf, int c)
     TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
 
     // Draw quad with vertices as texcoord + position, translate ModelView by advance in x
+    // Setup position + texcoord vertex format
+    // Setup shader program to consume this format
 
     /*
     glBegin(GL_QUADS);
@@ -359,129 +376,4 @@ txfRenderString(TexFont * txf, char *string, int len)
 {
     for (int i = 0; i < len; i++)
         txfRenderGlyph(txf, string[i]);
-}
-
-// Vertex coloring options
-enum {
-    MONO, TOP_BOTTOM, LEFT_RIGHT, FOUR
-};
-
-void
-txfRenderFancyString(
-    TexFont * txf,
-    char *string,
-    int len)
-{
-    TexGlyphVertexInfo *tgvi;
-    GLubyte c[4][3];
-    int mode = MONO;
-    int i;
-
-    for (i = 0; i < len; i++) {
-        if (string[i] == 27) {
-            switch (string[i + 1]) {
-            case 'M':
-                mode = MONO;
-                /*glColor3ubv((GLubyte *) & string[i + 2]);*/
-                i += 4;
-                break;
-            case 'T':
-                mode = TOP_BOTTOM;
-                memcpy(c, &string[i + 2], 6);
-                i += 7;
-                break;
-            case 'L':
-                mode = LEFT_RIGHT;
-                memcpy(c, &string[i + 2], 6);
-                i += 7;
-                break;
-            case 'F':
-                mode = FOUR;
-                memcpy(c, &string[i + 2], 12);
-                i += 13;
-                break;
-            }
-        } else {
-            switch (mode) {
-            case MONO:
-                txfRenderGlyph(txf, string[i]);
-                break;
-            case TOP_BOTTOM:
-                tgvi = getTCVI(txf, string[i]);
-
-                // Draw quad with vertices as top/bottom color + texcoord + position, translate ModelView by advance in x
-
-                /*
-                glBegin(GL_QUADS);
-
-                glColor3ubv(c[0]);
-                glTexCoord2fv(tgvi->t0);
-                glVertex2sv(tgvi->v0);
-                glTexCoord2fv(tgvi->t1);
-                glVertex2sv(tgvi->v1);
-
-                glColor3ubv(c[1]);
-                glTexCoord2fv(tgvi->t2);
-                glVertex2sv(tgvi->v2);
-                glTexCoord2fv(tgvi->t3);
-                glVertex2sv(tgvi->v3);
-
-                glEnd();
-                glTranslatef(tgvi->advance, 0.0, 0.0);
-                */
-                break;
-            case LEFT_RIGHT:
-                tgvi = getTCVI(txf, string[i]);
-
-                // Draw quad with vertices as left/right color + texcoord + position, translate ModelView by advance in x
-
-                /*
-                glBegin(GL_QUADS);
-
-                glColor3ubv(c[0]);
-                glTexCoord2fv(tgvi->t0);
-                glVertex2sv(tgvi->v0);
-
-                glColor3ubv(c[1]);
-                glTexCoord2fv(tgvi->t1);
-                glVertex2sv(tgvi->v1);
-
-                glColor3ubv(c[1]);
-                glTexCoord2fv(tgvi->t2);
-                glVertex2sv(tgvi->v2);
-
-                glColor3ubv(c[0]);
-                glTexCoord2fv(tgvi->t3);
-                glVertex2sv(tgvi->v3);
-
-                glEnd();
-                glTranslatef(tgvi->advance, 0.0, 0.0);
-                */
-                break;
-            case FOUR:
-                tgvi = getTCVI(txf, string[i]);
-
-                // Draw quad with vertices as four colors + texcoord + position, translate ModelView by advance in x
-
-                /*
-                glBegin(GL_QUADS);
-                glColor3ubv(c[0]);
-                glTexCoord2fv(tgvi->t0);
-                glVertex2sv(tgvi->v0);
-                glColor3ubv(c[1]);
-                glTexCoord2fv(tgvi->t1);
-                glVertex2sv(tgvi->v1);
-                glColor3ubv(c[2]);
-                glTexCoord2fv(tgvi->t2);
-                glVertex2sv(tgvi->v2);
-                glColor3ubv(c[3]);
-                glTexCoord2fv(tgvi->t3);
-                glVertex2sv(tgvi->v3);
-                glEnd();
-                glTranslatef(tgvi->advance, 0.0, 0.0);
-                */
-                break;
-            }
-        }
-    }
 }
