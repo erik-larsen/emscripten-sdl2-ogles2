@@ -11,7 +11,7 @@
 //     emrun hello_text_ttf_debug.html
 //
 // Result:
-//     A text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
+//     A TrueType text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
 //
 #include <exception>
 #include <algorithm>

@@ -12,7 +12,7 @@
 //     emrun hello_text_txf_debug.html
 //
 // Result:
-//     A text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
+//     A TXF text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
 //
 #include <exception>
 #include <algorithm>
@@ -71,23 +71,23 @@ GLuint textureObj = 0;
 
 // Text
 const char* message = "Hello Text";
+TexFont* txf = nullptr;
 
 // Shader vars
 const GLint positionAttrib = 0;
-GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize, shaderTexSize;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.8f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f}, texSize[2] = {0.0f, 0.0f};
+GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize;
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.8f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f};
 
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
 
-//  Quad vertex & fragment shaders
+//  Text quad vertex & fragment shaders
 GLuint quadShaderProgram = 0;
 const GLchar* quadVertexSource =
     "attribute vec4 position;                                   \n"
     "varying vec2 texCoord;                                     \n"
     "uniform vec2 viewport;                                     \n"
     "uniform vec2 textSize;                                     \n"
-    "uniform vec2 texSize;                                      \n"
     "void main()                                                \n"
     "{                                                          \n"
     "    gl_Position = vec4(position.xyz, 1.0);                 \n"
@@ -105,8 +105,8 @@ const GLchar* quadVertexSource =
     "    gl_Position.y *= 2.0 / viewport.y;                     \n"
     "                                                           \n"
     "    // Text subrectangle from overall texture              \n"
-    "    texCoord.x = position.x * textSize.x / texSize.x;      \n"
-    "    texCoord.y = position.y * textSize.y / texSize.y;     \n"
+    "    texCoord.x = position.x;                               \n"
+    "    texCoord.y = position.y;                               \n"
     "}                                                          \n";
 
 const GLchar* quadFragmentSource =
@@ -118,7 +118,7 @@ const GLchar* quadFragmentSource =
     "    gl_FragColor = texture2D(texSampler, texCoord);        \n"
     "}                                                          \n";
 
-// Triangle vertex & fragment shaders
+// Colorful triangle vertex & fragment shaders
 GLuint triShaderProgram = 0;
 const GLchar* triVertexSource =
     "uniform vec2 pan;                             \n"
@@ -162,7 +162,6 @@ void updateShaderUniforms()
     glUseProgram(quadShaderProgram);
     glUniform2fv(shaderViewport, 1, viewport);
     glUniform2fv(shaderTextSize, 1, textSize);
-    glUniform2fv(shaderTexSize, 1, texSize);
 
     glUseProgram(triShaderProgram);
     glUniform2fv(shaderPan, 1, pan);
@@ -202,7 +201,6 @@ void initShaders()
     // Get shader variables and initalize them
     shaderViewport = glGetUniformLocation(quadShaderProgram, "viewport");
     shaderTextSize = glGetUniformLocation(quadShaderProgram, "textSize");
-    shaderTexSize = glGetUniformLocation(quadShaderProgram, "texSize");
 
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
@@ -239,7 +237,7 @@ void initTextTexture()
     // Determine GL texture format
     GLint format = GL_RGBA;
 
-    TexFont *txf = txfLoadFont("media/rockfont.txf");
+    txf = txfLoadFont("media/rockfont.txf");
     if (txf)
     {
         printf("txf dimensions %dx%d\n", txf->tex_width, txf->tex_height);
@@ -266,22 +264,20 @@ void initTextTexture()
         {
             if (txf->teximage[i])
             {
-                //txf_pixels[i] = 0xffffffff;
                 unsigned char c = txf->teximage[i];
                 txf_pixels[i] = c | c << 8 | c << 16 | c << 24;
-                //txf_pixels[i] = c | c << 8 | c << 16 | (c < 128 ? 0x0 : 0xff) << 24;
             }
             else
-                txf_pixels[i] = 0;// 0x80808080;
+                txf_pixels[i] = 0;
         }
 
         // Copy SDL surface image to GL texture
         glTexImage2D(GL_TEXTURE_2D, 0, format, 
-                    txf->tex_width, txf->tex_height, 
-                    0, format, GL_UNSIGNED_BYTE, txf_pixels);
+                     txf->tex_width, txf->tex_height, 
+                     0, format, GL_UNSIGNED_BYTE, txf_pixels);
 
-        texSize[0] = textSize[0] = (GLfloat)txf->tex_width;
-        texSize[1] = textSize[1] = (GLfloat)txf->tex_height;
+        textSize[0] = (GLfloat)txf->tex_width;
+        textSize[1] = (GLfloat)txf->tex_height;
         updateShaderUniforms();
 
         delete[] txf_pixels;
@@ -581,13 +577,13 @@ int main(int argc, char** argv)
 
     // Start the main loop
 #ifdef __EMSCRIPTEN__
-    printf ("Pixel ratio = %f\n", emscripten_get_device_pixel_ratio());
     emscripten_set_main_loop(mainLoop, 0, true);
 #else
     while(true) 
         mainLoop();
 #endif
 
+    txfUnloadFont(txf);
     glDeleteTextures(1, &textureObj);
 
     return 0;

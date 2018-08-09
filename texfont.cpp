@@ -5,6 +5,9 @@
 #include <string.h>
 #include "texfont.h"
 
+// Enable to print out font texture bytes
+//#define TXF_DEBUG 1
+
 // byte swap a 32-bit value 
 #define SWAPL(x, n) { \
                     n = ((char *) (x))[0];\
@@ -19,8 +22,6 @@
                     n = ((char *) (x))[0];\
                     ((char *) (x))[0] = ((char *) (x))[1];\
                     ((char *) (x))[1] = n; }
-
-
 
 static char *lastError;
 
@@ -205,10 +206,13 @@ txfLoadFont(const char *filename)
                     TXF_LOAD_ERROR("out of memory.");
                 got = fread(txf->teximage, 1, txf->tex_width * txf->tex_height, file);
                 TXF_LOAD_EXPECT_GOT(txf->tex_width * txf->tex_height);
-                printf("TXF_FORMAT_BYTE\n");
-                for (int i = 0; i < txf->tex_width * txf->tex_height; ++i)
-                    printf("%x ", txf->teximage[i]);
-                printf("\n");
+
+                #ifdef TXF_DEBUG
+                    printf("TXF_FORMAT_BYTE\n");
+                    for (int i = 0; i < txf->tex_width * txf->tex_height; ++i)
+                        printf("%x ", txf->teximage[i]);
+                    printf("\n");
+                #endif
             }
             break;
         case TXF_FORMAT_BITMAP:
@@ -239,10 +243,13 @@ txfLoadFont(const char *filename)
                 }
                 
                 delete[] texbitmap;
-                printf("TXF_FORMAT_BITMAP\n");
-                for (int i = 0; i < width * height; ++i)
-                    printf("%x ", txf->teximage[i]);
-                printf("\n");
+
+                #ifdef TXF_DEBUG
+                    printf("TXF_FORMAT_BITMAP\n");
+                    for (int i = 0; i < width * height; ++i)
+                        printf("%x ", txf->teximage[i]);
+                    printf("\n");
+                #endif
             }
             break;
     }
