@@ -15,7 +15,7 @@ The long-term goal with this work is to preserve old graphics demos, particularl
 Demonstrates a colorful triangle using shaders, with support for mouse and touch input.  
 
 Controls: 
-- Pan with left mouse or finger touch
+- Pan with left mouse or finger drag
 - Zoom with mouse wheel or pinch gesture.
 
 ### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html)
@@ -28,23 +28,26 @@ Demonstrates a textured triangle, using SDL to load an image from a file.
 
 ![Hello Text](media/hello_text_ttf.png)
 
-Demonstrates TrueType text on a quad, using SDL to render a string into a texture.
+Demonstrates TrueType text, using SDL to render a string into a texture and apply it to a quad.
 
 ### [Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf_debug.html)
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 
-Demonstrates Texfont text on a quad, loading a font texture atlas from a .txf font file.  
+Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad. 
 
+## Motivation
 
-## Why Emscripten?  
+### Why Emscripten?  
 
 Running an app in the browser is the ultimate convenience for the user - no manual download and install is necessary and it will run on desktop, tablet, and phone.  Better to have Emscripten do the work to produce optimal Javascript/WASM, than doing the boring and error-prone work of hand porting C++ code.  Some porting work will still be necessary, but only to port into cross-platform C++.
 
-## Why SDL2? 
+
+### Why SDL2? 
 
 These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.). SDL provides a cross-platform library to access this, and Emscripten has an SDL port.
 
-## Why OpenGLES2?  
+
+### Why OpenGLES2?  
 
 These demos require GPU accelerated graphics. Using the GPU in the browser requires WebGL, and OpenGLES is the path to generating WebGL code via Emscripten.
