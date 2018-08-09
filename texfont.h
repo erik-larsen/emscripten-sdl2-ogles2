@@ -1,7 +1,12 @@
+//
+// This is a fork of GLUT TexFont code, ported to C++ and OpenGLES.
+//
+// https://github.com/markkilgard/glut/tree/master/progs/texfont
+// https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
+//
 #include <SDL_opengles2.h>
 
-#define TXF_FORMAT_BYTE		0
-#define TXF_FORMAT_BITMAP	1
+enum TxfFormat {TXF_FORMAT_BYTE, TXF_FORMAT_BITMAP};
 
 typedef struct {
     unsigned short c;       // Potentially support 16-bit glyphs.
@@ -70,11 +75,6 @@ extern void txfRenderGlyph(
     int c);
 
 extern void txfRenderString(
-    TexFont * txf,
-    char *string,
-    int len);
-
-extern void txfRenderFancyString(
     TexFont * txf,
     char *string,
     int len);
