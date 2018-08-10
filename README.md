@@ -15,8 +15,8 @@ The long-term goal with this work is to preserve old graphics demos, particularl
 Demonstrates a colorful triangle using shaders, with support for mouse and touch input.  
 
 Controls: 
-- Pan with left mouse or finger drag
-- Zoom with mouse wheel or pinch gesture.
+- Pan with left mouse or finger drag on mobile.
+- Zoom with mouse wheel or pinch gesture on mobile.
 
 ### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html)
 
