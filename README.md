@@ -18,19 +18,19 @@ Controls:
 - Pan with left mouse or finger drag
 - Zoom with mouse wheel or pinch gesture.
 
-### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture_debug.html)
+### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html)
 
 ![Hello Texture](media/hello_texture.png)
 
 Demonstrates a textured triangle, using SDL to load an image from a file.
 
-### [Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf_debug.html)
+### [Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf.html)
 
 ![Hello Text](media/hello_text_ttf.png)
 
 Demonstrates TrueType text, using SDL to render a string into a texture and apply it to a quad.
 
-### [Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf_debug.html)
+### [Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf.html)
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 

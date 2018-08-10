@@ -76,7 +76,7 @@ TexFont* txf = nullptr;
 // Shader vars
 const GLint positionAttrib = 0;
 GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize;
-GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.8f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f};
+GLfloat pan[2] = {0.0f, 0.0f}, zoom = 1.0f, aspect = 1.0f, viewport[2] = {640.0f, 480.0f}, textSize[2] = {0.0f, 0.0f};
 
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLfloat basePan[2] = {0.0f, 0.0f};
