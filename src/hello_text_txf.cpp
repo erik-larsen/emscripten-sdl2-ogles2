@@ -1,6 +1,5 @@
 //
 // Emscripten/SDL2/OpenGLES2 sample that displays Texfont text by loading a font and building a texture atlas
-// https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
 //
 // Setup:
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html

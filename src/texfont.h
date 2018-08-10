@@ -4,6 +4,7 @@
 // https://github.com/markkilgard/glut/tree/master/progs/texfont
 // https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
 //
+
 #include <SDL_opengles2.h>
 
 enum TxfFormat {TXF_FORMAT_BYTE, TXF_FORMAT_BITMAP};
