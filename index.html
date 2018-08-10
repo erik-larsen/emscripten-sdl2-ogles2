@@ -2,29 +2,22 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="chrome=1, IE=edge">
-        <title>Hello Triangle</title>
-        <style>
-            .fullwindow {
-                position: absolute;
-                top: 0px;
-                left: 0px;
-                margin: 0px;
-                border: 0;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-                display: block;
-            }
-        </style>
+        <title>Emscripten C++/SDL2/OpenGLES2 to Javascript/WebGL</title>
     </head>
-    <body style="background-color: #FFFFFF;">
-        <canvas class = "fullwindow" id="canvas" oncontextmenu="event.preventDefault()"/>
-        <script type="text/javascript">
-            var Module = {};
-            Module.canvas = document.getElementById('canvas');
-        </script>
-        <script async type="text/javascript" src="./hello_triangle.js"></script>
+    <body>
+        <h1>Emscripten C++/SDL2/OpenGLES2 to Javascript/WebGL</h1>
+        This project is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These samples can serve as building blocks to aid in porting C++ graphics apps to the browser.
+        <br>
+        <h2>Full window canvas</h2>
+        <p><a href="hello_triangle.html">Hello Triangle</a></p>
+        <p><a href="hello_texture.html">Hello Texture</a></p>
+        <p><a href="hello_text_ttf.html">Hello Text TTF</a></p>
+        <p><a href="hello_text_txf.html">Hello Text TXF</a></p>
+        <h2>Canvas + console</h2>
+        <p><a href="hello_triangle_debug.html">Hello Triangle Debug</a></p>
+        <p><a href="hello_texture_debug.html">Hello Texture Debug</a></p>
+        <p><a href="hello_text_ttf_debug.html">Hello Text TTF Debug</a></p>
+        <p><a href="hello_text_txf_debug.html">Hello Text TXF Debug</a></p>
     </body>
 </html>
 
