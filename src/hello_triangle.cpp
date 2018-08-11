@@ -24,27 +24,6 @@
 #include <SDL.h>
 #include <SDL_opengles2.h>
 
-// Window
-SDL_Window* window = nullptr;
-Uint32 windowID = 0;
-int windowWidth = 640, windowHeight = 480;
-
-// Mouse input
-const float MOUSE_WHEEL_ZOOM_DELTA = 0.05f;
-bool mouseButtonDown = false;
-int mouseButtonDownX = 0, mouseButtonDownY = 0;
-int mousePositionX = 0, mousePositionY = 0;
-
-// Finger input
-bool fingerDown = false;
-float fingerDownX = 0.0f, fingerDownY = 0.0f;
-long long fingerDownId = 0;
-
-// Pinch input
-const float PINCH_ZOOM_THRESHOLD = 0.001f;
-const float PINCH_SCALE = 8.0f;
-bool pinch = false;
-
 // Shader vars
 const GLfloat ZOOM_MIN = 0.1f, ZOOM_MAX = 10.0f;
 GLint shaderPan, shaderZoom, shaderAspect;
@@ -75,11 +54,6 @@ const GLchar* fragmentSource =
     "{                                            \n"
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
-
-float clamp (float val, float lo, float hi)
-{
-    return std::max(lo, std::min(val, hi));
-}
 
 void updateShader()
 {
@@ -136,6 +110,56 @@ void initGeometry(GLuint shaderProgram)
     glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
+// Events
+bool eventFired = false;
+
+// Window
+SDL_Window* window = nullptr;
+Uint32 windowID = 0;
+int windowWidth = 640, windowHeight = 480;
+
+void windowResizeEvent(int width, int height)
+{
+    windowWidth = width;
+    windowHeight = height;
+
+    // Update viewport and aspect ratio
+    glViewport(0, 0, windowWidth, windowHeight);
+    aspect = windowWidth / (float)windowHeight; 
+
+    eventFired = true;
+}
+
+void initWindow()
+{
+    // Create SDL window
+    window = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                            windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
+    windowID = SDL_GetWindowID(window);
+
+    // Create OpenGLES 2 context on SDL window
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GLContext glc = SDL_GL_CreateContext(window);
+
+    // Set clear color to black
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Initialize viewport
+    windowResizeEvent(windowWidth, windowHeight);
+}
+
+// Math & coordinate systems
+
+// Clamp val between lo and hi
+float clamp (float val, float lo, float hi)
+{
+    return std::max(lo, std::min(val, hi));
+}
+
 // Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
 void normWindowToDeviceCoords (float normWinX, float normWinY, float& deviceX, float& deviceY)
 {
@@ -172,16 +196,21 @@ void normWindowToWorldCoords(float normWinX, float normWinY, float& worldX, floa
     deviceToWorldCoords(deviceX, deviceY, worldX, worldY);
 }
 
-void windowResizeEvent(int width, int height)
-{
-    windowWidth = width;
-    windowHeight = height;
+// Mouse input
+const float MOUSE_WHEEL_ZOOM_DELTA = 0.05f;
+bool mouseButtonDown = false;
+int mouseButtonDownX = 0, mouseButtonDownY = 0;
+int mousePositionX = 0, mousePositionY = 0;
 
-    // Update viewport and aspect ratio
-    glViewport(0, 0, windowWidth, windowHeight);
-    aspect = windowWidth / (float)windowHeight; 
-    updateShader();
-}
+// Finger input
+bool fingerDown = false;
+float fingerDownX = 0.0f, fingerDownY = 0.0f;
+long long fingerDownId = 0;
+
+// Pinch input
+const float PINCH_ZOOM_THRESHOLD = 0.001f;
+const float PINCH_SCALE = 8.0f;
+bool pinch = false;
 
 void zoomEventMouse(bool mouseWheelDown, int x, int y)
 {                
@@ -203,7 +232,7 @@ void zoomEventMouse(bool mouseWheelDown, int x, int y)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    eventFired = true;
 }
 
 void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
@@ -226,7 +255,7 @@ void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    eventFired = true;
 }
 
 void panEventMouse(int x, int y)
@@ -240,7 +269,7 @@ void panEventMouse(int x, int y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
     
-    updateShader();
+    eventFired = true;
 }
 
 void panEventFinger(float x, float y)
@@ -254,7 +283,7 @@ void panEventFinger(float x, float y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
 
-    updateShader();
+    eventFired = true;
 }
 
 void handleEvents()
@@ -392,31 +421,21 @@ void redraw()
 void mainLoop() 
 {    
     handleEvents();
+    if (eventFired)
+    {
+        // Update shader if event fired
+        updateShader();
+        eventFired = false;
+    }
+
     redraw();
 }
 
 int main(int argc, char** argv)
 {
-    // Create SDL window
-    window = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
-    windowID = SDL_GetWindowID(window);
-
-    // Create OpenGLES 2 context on SDL window
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetSwapInterval(1);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GLContext glc = SDL_GL_CreateContext(window);
-
-    // Set clear color to black
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-    // Initialize shader
+    // Initialize window, shader, and geometry
+    initWindow();
     GLuint shaderProgram = initShader();
-
-    // Initialize geometry
     initGeometry(shaderProgram);
 
     // Start the main loop

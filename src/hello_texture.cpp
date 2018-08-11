@@ -5,11 +5,12 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build on Mac/Linux:
-//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture_debug.html
+//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o ../hello_texture.js
 // Build on Windows:
-//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture_debug.html
+//     emcc hello_texture.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o ..\hello_texture.js
 // 
 // Run:
+//     emrun hello_texture.html
 //     emrun hello_texture_debug.html
 //
 // Result:
@@ -25,11 +26,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_opengles2.h>
-
-// Window
-SDL_Window* window = nullptr;
-Uint32 windowID = 0;
-int windowWidth = 640, windowHeight = 480;
 
 // Geometry & texture
 GLfloat triangleVertices[] = 
@@ -75,8 +71,8 @@ const GLchar* vertexSource =
     "    gl_Position = vec4(position.xyz, 1.0);          \n"
     "    gl_Position.xy += pan;                          \n"
     "    gl_Position.xy *= zoom;                         \n"
-    "    gl_Position.y *= aspect;                        \n"
     "    texCoord = vec2(gl_Position.x, -gl_Position.y); \n"
+    "    gl_Position.y *= aspect;                        \n"
     "}                                                   \n";
 
 // Fragment/pixel shader
@@ -88,12 +84,6 @@ const GLchar* fragmentSource =
     "{                                                   \n"
     "    gl_FragColor = texture2D(texSampler, texCoord); \n"
     "}                                                   \n";
-
-
-float clamp (float val, float lo, float hi)
-{
-    return std::max(lo, std::min(val, hi));
-}
 
 void updateShader()
 {
@@ -194,6 +184,56 @@ void initTexture()
     }                       
 }
 
+// Events
+bool eventFired = false;
+
+// Window
+SDL_Window* window = nullptr;
+Uint32 windowID = 0;
+int windowWidth = 640, windowHeight = 480;
+
+void windowResizeEvent(int width, int height)
+{
+    windowWidth = width;
+    windowHeight = height;
+
+    // Update viewport and aspect ratio
+    glViewport(0, 0, windowWidth, windowHeight);
+    aspect = windowWidth / (float)windowHeight; 
+
+    eventFired = true;
+}
+
+void initWindow()
+{
+    // Create SDL window
+    window = SDL_CreateWindow("hello_triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                            windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
+    windowID = SDL_GetWindowID(window);
+
+    // Create OpenGLES 2 context on SDL window
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GLContext glc = SDL_GL_CreateContext(window);
+
+    // Set clear color to black
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Initialize viewport
+    windowResizeEvent(windowWidth, windowHeight);
+}
+
+// Math & coordinate systems
+
+// Clamp val between lo and hi
+float clamp (float val, float lo, float hi)
+{
+    return std::max(lo, std::min(val, hi));
+}
+
 // Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
 void normWindowToDeviceCoords (float normWinX, float normWinY, float& deviceX, float& deviceY)
 {
@@ -230,18 +270,6 @@ void normWindowToWorldCoords(float normWinX, float normWinY, float& worldX, floa
     deviceToWorldCoords(deviceX, deviceY, worldX, worldY);
 }
 
-void windowResizeEvent(int width, int height)
-{
-    windowWidth = width;
-    windowHeight = height;
-
-    // Update viewport and aspect ratio
-    glViewport(0, 0, windowWidth, windowHeight);
-    aspect = windowWidth / (float)windowHeight; 
-
-    updateShader();
-}
-
 void zoomEventMouse(bool mouseWheelDown, int x, int y)
 {                
     float preZoomWorldX, preZoomWorldY;
@@ -262,7 +290,7 @@ void zoomEventMouse(bool mouseWheelDown, int x, int y)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    eventFired = true;
 }
 
 void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
@@ -285,7 +313,7 @@ void zoomEventPinch (float pinchDist, float pinchX, float pinchY)
     pan[0] += deltaWorldX;
     pan[1] += deltaWorldY;
 
-    updateShader();
+    eventFired = true;
 }
 
 void panEventMouse(int x, int y)
@@ -299,7 +327,7 @@ void panEventMouse(int x, int y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
     
-    updateShader();
+    eventFired = true;
 }
 
 void panEventFinger(float x, float y)
@@ -313,7 +341,7 @@ void panEventFinger(float x, float y)
     pan[0] = basePan[0] + deviceX / zoom;
     pan[1] = basePan[1] + deviceY / zoom / aspect;
 
-    updateShader();
+    eventFired = true;
 }
 
 void handleEvents()
@@ -446,28 +474,20 @@ void redraw()
 void mainLoop() 
 {    
     handleEvents();
+    if (eventFired)
+    {
+        // Update shader if event fired
+        updateShader();
+        eventFired = false;
+    }
+
     redraw();
 }
 
 int main(int argc, char** argv)
 {
-    // Create SDL window
-    window = SDL_CreateWindow("hello_texture", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE| SDL_WINDOW_SHOWN);
-    windowID = SDL_GetWindowID(window);
-
-    // Create OpenGLES2 context on SDL window
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetSwapInterval(1);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GLContext glc = SDL_GL_CreateContext(window);
-
-    // Set clear color to black
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-    // Initialize graphics
+    // Initialize window, shader, geometry, and texture
+    initWindow();
     GLuint shaderProgram = initShader();
     initGeometry(shaderProgram);
     initTexture();
