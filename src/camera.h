@@ -12,11 +12,12 @@ public:
 
     Rect& windowSize() { return mWindowSize; }
     void setWindowSize (int width, int height);
-  
-    GLfloat* pan() { return (GLfloat *)&mPan; }
+    GLfloat* viewport() { return (GLfloat*)&mViewport; }
+ 
+    GLfloat* pan() { return (GLfloat*)&mPan; }
     GLfloat zoom() { return mZoom; }
     GLfloat aspect() { return mAspect; }
-
+ 
     void setPan (Vec2 pan) { mPan = pan; mCameraUpdated = true; }    
     void setPanDelta (Vec2 panDelta) { mPan.x += panDelta.x; mPan.y += panDelta.y; mCameraUpdated = true; }
     void setZoom (GLfloat zoom) { mZoom = clamp(zoom, cZoomMin, cZoomMax); mCameraUpdated = true; }
@@ -37,18 +38,21 @@ private:
 
     bool mCameraUpdated;
     Rect mWindowSize;
+    Vec2 mViewport;  
     const GLfloat cZoomMin, cZoomMax;
     Vec2 mBasePan, mPan;
-    GLfloat mZoom, mAspect;   
+    GLfloat mZoom, mAspect; 
 };
 
 inline Camera::Camera()
     : mCameraUpdated (false)
-    , mWindowSize ({640, 480})
+    , mWindowSize ({})
+    , mViewport ({})
     , cZoomMin (0.1f), cZoomMax (10.0f)
     , mBasePan ({0.0f, 0.0f})
     , mPan ({0.0f, 0.0f})
     , mZoom (1.0f)
     , mAspect (1.0f)
 {
+    setWindowSize(640, 480);
 }

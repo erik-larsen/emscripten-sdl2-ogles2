@@ -5,13 +5,12 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build on Mac/Linux:
-//     emcc -std=c++11 hello_texture.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o ../hello_texture.js
+//     emcc -std=c++11 hello_texture.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture.html
 // Build on Windows:
-//     emcc -std=c++11 hello_texture.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o ..\hello_texture.js
+//     emcc -std=c++11 hello_texture.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS="[""png""]" -s FULL_ES2=1 -s WASM=0 --preload-file media/texmap.png -o hello_texture.html
 // 
 // Run:
 //     emrun hello_texture.html
-//     emrun hello_texture_debug.html
 //
 // Result:
 //     A textured triangle.  Left mouse pans, mouse wheel zooms in/out.  Window is resizable.
@@ -24,8 +23,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_opengles2.h>
-#include "events.h"
 
+#include "events.h"
 EventHandler eventHandler("Hello Texture");
 
 // Texture

@@ -19,8 +19,8 @@ bool Camera::updated()
 
 void Camera::setWindowSize(int width, int height)
 {
-    mWindowSize.width = width;
-    mWindowSize.height = height;
+    mWindowSize = {width, height};
+    mViewport = {(float)width, (float)height};
     setAspect(width / (float)height);
 }
 

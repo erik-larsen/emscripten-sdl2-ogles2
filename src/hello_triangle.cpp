@@ -5,11 +5,10 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc -std=c++11 hello_triangle.cpp events.cpp camera.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 -o ../hello_triangle.js
+//     emcc -std=c++11 hello_triangle.cpp events.cpp camera.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=0 -o hello_triangle.html
 //
 // Run:
 //     emrun hello_triangle.html
-//     emrun hello_triangle_debug.html
 //
 // Result:
 //     A colorful triangle.  Left mouse pans, mouse wheel zooms in/out.  Window is resizable.
@@ -21,8 +20,8 @@
 
 #include <SDL.h>
 #include <SDL_opengles2.h>
-#include "events.h"
 
+#include "events.h"
 EventHandler eventHandler("Hello Triangle");
 
 // Vertex shader
@@ -54,7 +53,7 @@ const GLchar* fragmentSource =
 void updateShader()
 {
     Camera& camera = eventHandler.camera();
-    
+
     glUniform2fv(shaderPan, 1, camera.pan());
     glUniform1f(shaderZoom, camera.zoom()); 
     glUniform1f(shaderAspect, camera.aspect());
@@ -133,7 +132,7 @@ void mainLoop()
 
 int main(int argc, char** argv)
 {
-    // Initialize shader, and geometry
+    // Initialize shader and geometry
     GLuint shaderProgram = initShader();
     initGeometry(shaderProgram);
 
