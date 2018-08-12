@@ -6,31 +6,31 @@ This project is a collection of C++/SDL2/OpenGL samples that run in the browser 
 The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
 
 
-## Try it!
+## Samples
 
-### [Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
+### [Run Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
 
 ![Hello Triangle](media/hello_triangle.png)
 
 Demonstrates a colorful triangle using shaders, with support for mouse and touch input.  
 
 Controls: 
-- Pan with left mouse or finger drag on mobile.
-- Zoom with mouse wheel or pinch gesture on mobile.
+ * Pan with left mouse or finger drag on mobile.
+ * Zoom with mouse wheel or pinch gesture on mobile.
 
-### [Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html)
+### [Run Hello Texture](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_texture.html)
 
 ![Hello Texture](media/hello_texture.png)
 
 Demonstrates a textured triangle, using SDL to load an image from a file.
 
-### [Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf.html)
+### [Run Hello Text](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_ttf.html)
 
 ![Hello Text](media/hello_text_ttf.png)
 
 Demonstrates TrueType text, using SDL to render a string into a texture and apply it to a quad.
 
-### [Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf.html)
+### [Run Hello Texture Atlas](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_text_txf.html)
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 
