@@ -12,9 +12,7 @@ The long-term goal with this work is to preserve old graphics demos, particularl
 
 ![Hello Triangle](media/hello_triangle.png)
 
-Demonstrates a colorful triangle using shaders, with support for mouse and touch input.  
-
-Controls: 
+Demonstrates a colorful triangle using shaders, with support for mouse and touch input:
  * Pan with left mouse or finger drag on mobile.
  * Zoom with mouse wheel or pinch gesture on mobile.
 
