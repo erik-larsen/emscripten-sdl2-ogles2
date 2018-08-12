@@ -54,6 +54,7 @@ const GLchar* fragmentSource =
 void updateShader()
 {
     Camera& camera = eventHandler.camera();
+    
     glUniform2fv(shaderPan, 1, camera.pan());
     glUniform1f(shaderZoom, camera.zoom()); 
     glUniform1f(shaderAspect, camera.aspect());
