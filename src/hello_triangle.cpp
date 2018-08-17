@@ -22,7 +22,6 @@
 #include <SDL_opengles2.h>
 
 #include "events.h"
-EventHandler eventHandler("Hello Triangle");
 
 // Vertex shader
 GLint shaderPan, shaderZoom, shaderAspect;
@@ -50,7 +49,7 @@ const GLchar* fragmentSource =
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
-void updateShader()
+void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
@@ -59,7 +58,7 @@ void updateShader()
     glUniform1f(shaderAspect, camera.aspect());
 }
 
-GLuint initShader()
+GLuint initShader(EventHandler& eventHandler)
 {
     // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -78,11 +77,11 @@ GLuint initShader()
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
 
-    // Get shader variables and initalize them
+    // Get shader variables and initialize them
     shaderPan = glGetUniformLocation(shaderProgram, "pan");
     shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
-    updateShader();
+    updateShader(eventHandler);
 
     return shaderProgram;
 }
@@ -107,7 +106,7 @@ void initGeometry(GLuint shaderProgram)
     glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-void redraw()
+void redraw(EventHandler& eventHandler)
 {
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
@@ -119,26 +118,31 @@ void redraw()
     eventHandler.swapWindow();
 }
 
-void mainLoop() 
-{    
+void mainLoop(void* mainLoopArg) 
+{   
+    EventHandler& eventHandler = *((EventHandler*)mainLoopArg);
     eventHandler.processEvents();
 
     // Update shader if camera changed
     if (eventHandler.camera().updated())
-        updateShader();
+        updateShader(eventHandler);
 
-    redraw();
+    redraw(eventHandler);
 }
 
 int main(int argc, char** argv)
 {
+    EventHandler eventHandler("Hello Triangle");
+
     // Initialize shader and geometry
-    GLuint shaderProgram = initShader();
+    GLuint shaderProgram = initShader(eventHandler);
     initGeometry(shaderProgram);
 
     // Start the main loop
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(mainLoop, 0, true);
+    void* mainLoopArg = &eventHandler;
+    int fps = 0; // Use browser's requestAnimationFrame
+    emscripten_set_main_loop_arg(mainLoop, mainLoopArg, fps, true);
 #else
     while(true) 
         mainLoop();
