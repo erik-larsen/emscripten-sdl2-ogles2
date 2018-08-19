@@ -22,8 +22,6 @@
 #include <SDL_opengles2.h>
 
 #include "events.h"
-EventHandler eventHandler("Hello TXF Text");
-
 #include "texfont.h"
 
 // Geometry
@@ -104,7 +102,7 @@ const GLchar* triFragmentSource =
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
-void updateShader()
+void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
@@ -141,7 +139,7 @@ GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
     return shaderProgram;
 }
 
-void initShaders()
+void initShaders(EventHandler& eventHandler)
 {
     // Compile & link shaders
     quadShaderProgram = initShader(quadVertexSource, quadFragmentSource);
@@ -155,7 +153,7 @@ void initShaders()
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(triShaderProgram, "aspect");
     
-    updateShader();
+    updateShader(eventHandler);
 }
 
 void initGeometry()
@@ -194,7 +192,7 @@ void debugPrintSurface(SDL_Surface* surface, const char* name, bool dumpPixels)
     }
 }
 
-void initTextTexture()
+void initTextTexture(EventHandler& eventHandler)
 {
     // Determine GL texture format
     GLint format = GL_RGBA;
@@ -240,7 +238,7 @@ void initTextTexture()
 
         textSize[0] = (GLfloat)txf->tex_width;
         textSize[1] = (GLfloat)txf->tex_height;
-        updateShader();
+        updateShader(eventHandler);
 
         delete[] txf_pixels;
     }
@@ -248,7 +246,7 @@ void initTextTexture()
         printf("error loading txf\n");
 }
 
-void redraw()
+void redraw(EventHandler& eventHandler)
 {
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
@@ -269,30 +267,36 @@ void redraw()
     eventHandler.swapWindow();
 }
 
-void mainLoop() 
+void mainLoop(void* mainLoopArg) 
 {    
+    EventHandler& eventHandler = *((EventHandler*)mainLoopArg);
     eventHandler.processEvents();
 
     // Update shader if camera changed
     if (eventHandler.camera().updated())
-        updateShader();
+        updateShader(eventHandler);
 
-    redraw();
+    redraw(eventHandler);
 }
 
 int main(int argc, char** argv)
 {
+    EventHandler eventHandler("Hello TXF Text");
+
     // Initialize graphics
-    initShaders();
+    initShaders(eventHandler);
     initGeometry();
-    initTextTexture();
+    initTextTexture(eventHandler);
 
     // Start the main loop
+    void* mainLoopArg = &eventHandler;
+
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(mainLoop, 0, true);
+    int fps = 0; // Use browser's requestAnimationFrame
+    emscripten_set_main_loop_arg(mainLoop, mainLoopArg, fps, true);
 #else
     while(true) 
-        mainLoop();
+        mainLoop(mainLoopArg);
 #endif
 
     txfUnloadFont(txf);

@@ -25,7 +25,6 @@
 #include <SDL_opengles2.h>
 
 #include "events.h"
-EventHandler eventHandler("Hello Texture");
 
 // Texture
 const char* cTextureFilename = "media/texmap.png";
@@ -58,7 +57,7 @@ const GLchar* fragmentSource =
     "    gl_FragColor = texture2D(texSampler, texCoord); \n"
     "}                                                   \n";
 
-void updateShader()
+void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
@@ -67,7 +66,7 @@ void updateShader()
     glUniform1f(shaderAspect, camera.aspect());
 }
 
-GLuint initShader()
+GLuint initShader(EventHandler& eventHandler)
 {
     // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -90,7 +89,7 @@ GLuint initShader()
     shaderPan = glGetUniformLocation(shaderProgram, "pan");
     shaderZoom = glGetUniformLocation(shaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(shaderProgram, "aspect");
-    updateShader();
+    updateShader(eventHandler);
 
     return shaderProgram;
 }
@@ -165,7 +164,7 @@ void initTexture()
     }                       
 }
 
-void redraw()
+void redraw(EventHandler& eventHandler)
 {
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
@@ -177,30 +176,36 @@ void redraw()
     eventHandler.swapWindow();
 }
 
-void mainLoop() 
+void mainLoop(void* mainLoopArg) 
 {    
+    EventHandler& eventHandler = *((EventHandler*)mainLoopArg);
     eventHandler.processEvents();
 
     // Update shader if camera changed
     if (eventHandler.camera().updated())
-        updateShader();
+        updateShader(eventHandler);
 
-    redraw();
+    redraw(eventHandler);
 }
 
 int main(int argc, char** argv)
 {
+    EventHandler eventHandler("Hello Texture");
+    
     // Initialize shader, geometry, and texture
-    GLuint shaderProgram = initShader();
+    GLuint shaderProgram = initShader(eventHandler);
     initGeometry(shaderProgram);
     initTexture();
 
     // Start the main loop
+    void* mainLoopArg = &eventHandler;
+
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(mainLoop, 0, true);
+    int fps = 0; // Use browser's requestAnimationFrame
+    emscripten_set_main_loop_arg(mainLoop, mainLoopArg, fps, true);
 #else
     while(true) 
-        mainLoop();
+        mainLoop(mainLoopArg);
 #endif
 
     glDeleteTextures(1, &textureObj);
