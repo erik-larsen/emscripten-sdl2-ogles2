@@ -139,13 +139,14 @@ int main(int argc, char** argv)
     initGeometry(shaderProgram);
 
     // Start the main loop
-#ifdef __EMSCRIPTEN__
     void* mainLoopArg = &eventHandler;
+
+#ifdef __EMSCRIPTEN__
     int fps = 0; // Use browser's requestAnimationFrame
     emscripten_set_main_loop_arg(mainLoop, mainLoopArg, fps, true);
 #else
     while(true) 
-        mainLoop();
+        mainLoop(mainLoopArg);
 #endif
 
     return 0;
