@@ -24,16 +24,15 @@
 #include "events.h"
 #include "texfont.h"
 
-// Geometry
+// Triangle
 GLuint triangleVbo = 0;
-GLuint quadVbo = 0;
-
-// Texture
-GLuint textureObj = 0;
 
 // Text
 const char* cFontName = "media/rockfont.txf";
 TexFont* txf = nullptr;
+GLuint fontTextureObj = 0;
+GLuint quadFontVbo = 0;
+GLuint quadsTextStringVbo = 0;
 
 // Shader vars
 const GLint positionAttrib = 0;
@@ -41,8 +40,8 @@ GLfloat textSize[2] = {0.0f, 0.0f};
 GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize;
 
 //  Text quad vertex & fragment shaders
-GLuint quadShaderProgram = 0;
-const GLchar* quadVertexSource =
+GLuint quadFontShaderProgram = 0;
+const GLchar* quadFontVertexSource =
     "attribute vec4 position;                                   \n"
     "varying vec2 texCoord;                                     \n"
     "uniform vec2 viewport;                                     \n"
@@ -68,7 +67,7 @@ const GLchar* quadVertexSource =
     "    texCoord.y = position.y;                               \n"
     "}                                                          \n";
 
-const GLchar* quadFragmentSource =
+const GLchar* quadFontFragmentSource =
     "precision mediump float;                                   \n"
     "varying vec2 texCoord;                                     \n"
     "uniform sampler2D texSampler;                              \n"
@@ -106,7 +105,7 @@ void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
-    glUseProgram(quadShaderProgram);
+    glUseProgram(quadFontShaderProgram);
     glUniform2fv(shaderViewport, 1, camera.viewport());
     glUniform2fv(shaderTextSize, 1, textSize);
 
@@ -142,12 +141,12 @@ GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
 void initShaders(EventHandler& eventHandler)
 {
     // Compile & link shaders
-    quadShaderProgram = initShader(quadVertexSource, quadFragmentSource);
+    quadFontShaderProgram = initShader(quadFontVertexSource, quadFontFragmentSource);
     triShaderProgram = initShader(triVertexSource, triFragmentSource);
 
     // Get shader variables and initalize them
-    shaderViewport = glGetUniformLocation(quadShaderProgram, "viewport");
-    shaderTextSize = glGetUniformLocation(quadShaderProgram, "textSize");
+    shaderViewport = glGetUniformLocation(quadFontShaderProgram, "viewport");
+    shaderTextSize = glGetUniformLocation(quadFontShaderProgram, "textSize");
 
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
@@ -159,8 +158,8 @@ void initShaders(EventHandler& eventHandler)
 void initGeometry()
 {
    // Create vertex buffer objects and copy vertex data into them
-    glGenBuffers(1, &quadVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+    glGenBuffers(1, &quadFontVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
     GLfloat quadVertices[] = 
     {
         0.0f, 1.0f, 0.0f,
@@ -207,10 +206,10 @@ void initTextTexture(EventHandler& eventHandler)
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
         // Generate a GL texture object
-        glGenTextures(1, &textureObj);
+        glGenTextures(1, &fontTextureObj);
 
         // Bind GL texture
-        glBindTexture(GL_TEXTURE_2D, textureObj);
+        glBindTexture(GL_TEXTURE_2D, fontTextureObj);
 
         // Set the GL texture's wrapping and stretching properties
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -219,6 +218,7 @@ void initTextTexture(EventHandler& eventHandler)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+        txf->texobj = fontTextureObj;
         unsigned int* txf_pixels = new unsigned int[txf->tex_width * txf->tex_height];
         for (int i = 0; i < txf->tex_width * txf->tex_height; ++i)
         {
@@ -258,8 +258,8 @@ void redraw(EventHandler& eventHandler)
     glDrawArrays(GL_TRIANGLES, 0, 3);
     
     // Draw the quad VBO with a text texture shader
-    glUseProgram(quadShaderProgram);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVbo);
+    glUseProgram(quadFontShaderProgram);
+    glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -300,7 +300,7 @@ int main(int argc, char** argv)
 #endif
 
     txfUnloadFont(txf);
-    glDeleteTextures(1, &textureObj);
+    glDeleteTextures(1, &fontTextureObj);
 
     return 0;
 }
