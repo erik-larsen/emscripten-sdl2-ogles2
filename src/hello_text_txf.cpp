@@ -142,13 +142,16 @@ GLuint buildShaderProgram(const GLchar* vertexSource, const GLchar* fragmentSour
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glBindAttribLocation(shaderProgram, positionAttrib, "position");
-    glEnableVertexAttribArray(positionAttrib);
     if (bUseTexCoords)
-    {
         glBindAttribLocation(shaderProgram, texCoordAttrib, "texCoord");
-        glEnableVertexAttribArray(texCoordAttrib);
-    }
+    
     glLinkProgram(shaderProgram);
+
+    GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR)
+        printf("ERROR: Shader failed to build, error code %d\n", glError);
+    else
+        printf("Shader built OK.\n");
 
     return shaderProgram;
 }
@@ -167,7 +170,10 @@ void initShaders(EventHandler& eventHandler)
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(triShaderProgram, "aspect");
-    
+
+    // All shaders use position geometry, so enable it here
+    glEnableVertexAttribArray(positionAttrib);
+   
     updateShader(eventHandler);
 }
 
@@ -282,6 +288,11 @@ void redraw(EventHandler& eventHandler)
     glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
     glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // WIP: Draw quads with a text shader
+    glEnableVertexAttribArray(texCoordAttrib);
+    // Draw quads with position *and* texture coord attribs
+    glDisableVertexAttribArray(texCoordAttrib);
 
     // Swap front/back framebuffers
     eventHandler.swapWindow();
