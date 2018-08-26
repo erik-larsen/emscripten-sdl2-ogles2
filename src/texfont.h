@@ -31,6 +31,7 @@ typedef struct {
     GLfloat t3[2];
     GLshort v3[2];
     GLfloat advance;
+    GLfloat vertexBuffer[(3+2)*4];
 } TexGlyphVertexInfo;
 
 typedef struct {

@@ -188,6 +188,36 @@ txfLoadFont(const char *filename)
         txf->tgvi[i].v3[0] = tgi->xoffset;
         txf->tgvi[i].v3[1] = tgi->yoffset + tgi->height;
         txf->tgvi[i].advance = tgi->advance;
+
+        TexGlyphVertexInfo& tgvi = txf->tgvi[i];
+        GLfloat* vb = tgvi.vertexBuffer;
+        int offset = 0;
+        vb[offset+0] = 0.0f;
+        vb[offset+1] = 1.0f;
+        vb[offset+2] = 0.0f;
+        vb[offset+3] = tgvi.t3[0];
+        vb[offset+4] = tgvi.t3[1];
+
+        offset += 5;
+        vb[offset+0] = 1.0f;
+        vb[offset+1] = 1.0f;
+        vb[offset+2] = 0.0f;
+        vb[offset+3] = tgvi.t2[0];
+        vb[offset+4] = tgvi.t2[1];
+
+        offset += 5;
+        vb[offset+0] = 0.0f;
+        vb[offset+1] = 0.0f;
+        vb[offset+2] = 0.0f;
+        vb[offset+3] = tgvi.t0[0];
+        vb[offset+4] = tgvi.t0[1];
+
+        offset += 5;
+        vb[offset+0] = 1.0f;
+        vb[offset+1] = 0.0f;
+        vb[offset+2] = 0.0f;
+        vb[offset+3] = tgvi.t1[0];
+        vb[offset+4] = tgvi.t1[1];       
     }
 
     int min_glyph = txf->tgi[0].c;
@@ -351,10 +381,6 @@ txfRenderGlyph(TexFont * txf, int c)
 {
     TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
 
-    // Draw quad with vertices as texcoord + position, translate ModelView by advance in x
-    // Setup position + texcoord vertex format
-    // Setup shader program to consume this format
-
     /*
     glBegin(GL_QUADS);
     glTexCoord2fv(tgvi->t0);
@@ -369,11 +395,36 @@ txfRenderGlyph(TexFont * txf, int c)
     glTranslatef(tgvi->advance, 0.0, 0.0);
     */
 
+    printf ("tgvi '%c'\n", (char)c);
+    printf ("texCoord 0 %f,%f  ", tgvi->t0[0], tgvi->t0[1]);
+    printf ("position 0 %d,%d\n", tgvi->v0[0], tgvi->v0[1]);
+    printf ("texCoord 1 %f,%f  ", tgvi->t1[0], tgvi->t1[1]);
+    printf ("position 1 %d,%d\n", tgvi->v1[0], tgvi->v1[1]);
+    printf ("texCoord 2 %f,%f  ", tgvi->t2[0], tgvi->t2[1]);
+    printf ("position 2 %d,%d\n", tgvi->v2[0], tgvi->v2[1]);
+    printf ("texCoord 3 %f,%f  ", tgvi->t3[0], tgvi->t3[1]);
+    printf ("position 3 %d,%d\n", tgvi->v3[0], tgvi->v3[1]);
+     
+    for (int i = 0; i < 4; ++i)
+    {
+        GLfloat* vb = tgvi->vertexBuffer;
+        printf("tgvi vb pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                i, vb[i*5], vb[i*5+1], vb[i*5+2],
+                i, vb[i*5+3], vb[i*5+4]);
+    }
 }
 
 void
 txfRenderString(TexFont * txf, char *string, int len)
 {
-    for (int i = 0; i < len; i++)
-        txfRenderGlyph(txf, string[i]);
+    // TXF strings
+    // pre-reserve std C++ vector array of structs, with geom and texcoords as unit quads
+    // run through string and update geom and texcoords according to glyph and place in string
+    // create vbo from vector
+    // maintain std unordered map of [“string”,vbo id] to reuse string vbos on subsequent draws 
+    // subsequent draw string calls check map and reuse vbo id if present
+    // optional: create, draw, delete string API added to texfont
+
+    /*for (int i = 0; i < len; i++)
+        txfRenderGlyph(txf, string[i]);*/
 }
