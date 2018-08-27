@@ -31,7 +31,7 @@ typedef struct {
     GLfloat t3[2];
     GLshort v3[2];
     GLfloat advance;
-    GLfloat vertexBuffer[(3+2)*4];
+    GLfloat vertexArray[(3+2)*4];
 } TexGlyphVertexInfo;
 
 typedef struct {
@@ -66,7 +66,7 @@ extern void txfBindFontTexture(
 
 extern void txfGetStringMetrics(
     TexFont * txf,
-    char *string,
+    const char *string,
     int len,
     int *width,
     int *max_ascent,
@@ -78,5 +78,5 @@ extern void txfRenderGlyph(
 
 extern void txfRenderString(
     TexFont * txf,
-    char *string,
+    const char *string,
     int len);

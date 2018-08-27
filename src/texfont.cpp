@@ -190,34 +190,45 @@ txfLoadFont(const char *filename)
         txf->tgvi[i].advance = tgi->advance;
 
         TexGlyphVertexInfo& tgvi = txf->tgvi[i];
-        GLfloat* vb = tgvi.vertexBuffer;
+//#ifdef TXF_DEBUG        
+        printf ("tgvi #%d '%c'\n", i, tgi->c);
+        printf ("texCoord 0 %f,%f  ", tgvi.t0[0], tgvi.t0[1]);
+        printf ("position 0 %d,%d\n", tgvi.v0[0], tgvi.v0[1]);
+        printf ("texCoord 1 %f,%f  ", tgvi.t1[0], tgvi.t1[1]);
+        printf ("position 1 %d,%d\n", tgvi.v1[0], tgvi.v1[1]);
+        printf ("texCoord 2 %f,%f  ", tgvi.t2[0], tgvi.t2[1]);
+        printf ("position 2 %d,%d\n", tgvi.v2[0], tgvi.v2[1]);
+        printf ("texCoord 3 %f,%f  ", tgvi.t3[0], tgvi.t3[1]);
+        printf ("position 3 %d,%d\n", tgvi.v3[0], tgvi.v3[1]);
+//#endif
+        GLfloat* va = tgvi.vertexArray;
         int offset = 0;
-        vb[offset+0] = 0.0f;
-        vb[offset+1] = 1.0f;
-        vb[offset+2] = 0.0f;
-        vb[offset+3] = tgvi.t3[0];
-        vb[offset+4] = tgvi.t3[1];
+        va[offset+0] = tgvi.v3[0]; //0.0f;
+        va[offset+1] = tgvi.v3[1]; //1.0f;
+        va[offset+2] = 0.0f;
+        va[offset+3] = tgvi.t3[0];
+        va[offset+4] = tgvi.t3[1];
 
         offset += 5;
-        vb[offset+0] = 1.0f;
-        vb[offset+1] = 1.0f;
-        vb[offset+2] = 0.0f;
-        vb[offset+3] = tgvi.t2[0];
-        vb[offset+4] = tgvi.t2[1];
+        va[offset+0] = tgvi.v2[0]; //1.0f;
+        va[offset+1] = tgvi.v2[1]; //1.0f;
+        va[offset+2] = 0.0f;
+        va[offset+3] = tgvi.t2[0];
+        va[offset+4] = tgvi.t2[1];
 
         offset += 5;
-        vb[offset+0] = 0.0f;
-        vb[offset+1] = 0.0f;
-        vb[offset+2] = 0.0f;
-        vb[offset+3] = tgvi.t0[0];
-        vb[offset+4] = tgvi.t0[1];
+        va[offset+0] = tgvi.v0[0]; //0.0f;
+        va[offset+1] = tgvi.v0[1]; //0.0f;
+        va[offset+2] = 0.0f;
+        va[offset+3] = tgvi.t0[0];
+        va[offset+4] = tgvi.t0[1];
 
         offset += 5;
-        vb[offset+0] = 1.0f;
-        vb[offset+1] = 0.0f;
-        vb[offset+2] = 0.0f;
-        vb[offset+3] = tgvi.t1[0];
-        vb[offset+4] = tgvi.t1[1];       
+        va[offset+0] = tgvi.v1[0]; //1.0f;
+        va[offset+1] = tgvi.v1[1]; //0.0f;
+        va[offset+2] = 0.0f;
+        va[offset+3] = tgvi.t1[0];
+        va[offset+4] = tgvi.t1[1];       
     }
 
     int min_glyph = txf->tgi[0].c;
@@ -333,6 +344,9 @@ txfUnloadFont(TexFont * txf)
 {
     if (txf)
     {
+        if (txf->texobj != 0)
+            glDeleteTextures(1, &txf->texobj);
+
         delete[] txf->teximage;
         delete[] txf->tgi;
         delete[] txf->tgvi;
@@ -344,7 +358,7 @@ txfUnloadFont(TexFont * txf)
 void
 txfGetStringMetrics(
     TexFont * txf,
-    char *string,
+    const char *string,
     int len,
     int *width,
     int *max_ascent,
@@ -379,7 +393,45 @@ txfGetStringMetrics(
 void
 txfRenderGlyph(TexFont * txf, int c)
 {
+    // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
     TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
+
+    const GLuint vertexPositionIndex = 0, 
+                 vertexTexCoordIndex = 1;
+    const GLint  vertexPositionSize = 3, // x,y,z
+                 vertexTexCoordSize = 2; // u,v
+    const GLuint vertexStrideBytes = (vertexPositionSize + vertexTexCoordSize) * sizeof(GLfloat);
+    const GLuint numVertices = 4;
+
+    static GLuint quadVboId = 0;
+    if (quadVboId == 0)
+    {
+        glGenBuffers(1, &quadVboId);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVboId);
+        glBufferData(GL_ARRAY_BUFFER, vertexStrideBytes * numVertices, tgvi->vertexArray, GL_STATIC_DRAW);
+
+        printf ("Built quadVboId %d\n", quadVboId);
+        #ifdef TXF_DEBUG        
+        for (int i = 0; i < 4; ++i)
+        {
+            GLfloat* va = tgvi->vertexArray;
+            printf("tgvi va pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                    i, va[i*5], va[i*5+1], va[i*5+2],
+                    i, va[i*5+3], va[i*5+4]);
+        }
+        #endif
+    }
+    else
+        glBindBuffer(GL_ARRAY_BUFFER, quadVboId);
+
+    GLuint offset = 0;
+    glVertexAttribPointer(vertexPositionIndex, vertexPositionSize, GL_FLOAT, GL_FALSE, vertexStrideBytes, (const void*)offset);
+    offset += vertexPositionSize * sizeof(GLfloat);
+    glVertexAttribPointer(vertexTexCoordIndex, vertexTexCoordSize, GL_FLOAT, GL_FALSE, vertexStrideBytes, (const void*)offset);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, numVertices);
+
+    //glDeleteBuffers(1, &quadVboId);
 
     /*
     glBegin(GL_QUADS);
@@ -395,6 +447,8 @@ txfRenderGlyph(TexFont * txf, int c)
     glTranslatef(tgvi->advance, 0.0, 0.0);
     */
 
+#ifdef TXF_DEBUG
+    TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
     printf ("tgvi '%c'\n", (char)c);
     printf ("texCoord 0 %f,%f  ", tgvi->t0[0], tgvi->t0[1]);
     printf ("position 0 %d,%d\n", tgvi->v0[0], tgvi->v0[1]);
@@ -407,16 +461,20 @@ txfRenderGlyph(TexFont * txf, int c)
      
     for (int i = 0; i < 4; ++i)
     {
-        GLfloat* vb = tgvi->vertexBuffer;
-        printf("tgvi vb pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
-                i, vb[i*5], vb[i*5+1], vb[i*5+2],
-                i, vb[i*5+3], vb[i*5+4]);
+        GLfloat* va = tgvi->vertexArray;
+        printf("tgvi va pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                i, va[i*5], va[i*5+1], va[i*5+2],
+                i, va[i*5+3], va[i*5+4]);
     }
+#endif
+
 }
 
 void
-txfRenderString(TexFont * txf, char *string, int len)
+txfRenderString(TexFont * txf, const char *string, int len)
 {
+    // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
+
     // TXF strings
     // pre-reserve std C++ vector array of structs, with geom and texcoords as unit quads
     // run through string and update geom and texcoords according to glyph and place in string

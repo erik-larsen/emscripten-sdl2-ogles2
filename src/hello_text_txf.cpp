@@ -25,29 +25,39 @@
 #include "texfont.h"
 
 // Vertex attribute indices for all shaders
-const GLint vertexPositionIndex = 0;
-const GLint vertexTexCoordIndex = 1;
+const GLuint vertexPositionIndex = 0, 
+             vertexTexCoordIndex = 1;
 
 // Text quads geometry and vertex shader
 GLuint quadsTextShaderProgram = 0;
+GLint shaderViewport2;
+GLint shaderTextureSampler2;
+
 const GLchar* quadsTextVertexSource =
+    "uniform vec2 viewport;                                     \n"
     "attribute vec4 position;                                   \n"
     "attribute vec2 texCoord;                                   \n"
     "varying vec2 vTexCoord;                                    \n"    
     "void main()                                                \n"
     "{                                                          \n"
     "    gl_Position = vec4(position.xyz, 1.0);                 \n"
-    "    vTexCoord = texCoord;                                  \n"
+    "                                                           \n"
+    "    // Ortho projection                                    \n"
+    "    gl_Position.x += 1.0;                                  \n"
+    "    gl_Position.x *= 2.0 / viewport.x;                     \n"
+    "    gl_Position.y += 1.0;                                  \n"
+    "    gl_Position.y *= 2.0 / viewport.y;                     \n"
+    "                                                           \n"
+    "    vTexCoord = texCoord;                                  \n"  
     "}                                                          \n";
 
 // Font quad texture, geometry, and vertex shader
 const char* cFontName = "media/rockfont.txf";
 TexFont* texFont = nullptr;
-GLuint fontTextureObj = 0;
 GLuint quadFontVbo = 0;
 GLuint quadFontShaderProgram = 0;
 GLfloat fontSize[2] = {0.0f, 0.0f};
-GLint shaderViewport, shaderFontSize;
+GLint shaderViewport, shaderFontSize, shaderTextureSampler;
 const GLchar* quadFontVertexSource =
     "uniform vec2 viewport;                                     \n"
     "uniform vec2 fontSize;                                     \n"
@@ -114,9 +124,14 @@ void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
+    glUseProgram(quadsTextShaderProgram);
+    glUniform2fv(shaderViewport2, 1, camera.viewport());
+    glUniform1i(shaderTextureSampler2, 0);
+
     glUseProgram(quadFontShaderProgram);
     glUniform2fv(shaderViewport, 1, camera.viewport());
     glUniform2fv(shaderFontSize, 1, fontSize);
+    glUniform1i(shaderTextureSampler, 0);
 
     glUseProgram(triShaderProgram);
     glUniform2fv(shaderPan, 1, camera.pan());
@@ -148,9 +163,9 @@ GLuint buildShaderProgram(const GLchar* vertexSource, const GLchar* fragmentSour
 
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR)
-        printf("ERROR: Shader failed to build, error code %d\n", glError);
+        printf("ERROR: Shader %d failed to build, error code %d\n", shaderProgram, glError);
     else
-        printf("Shader built OK.\n");
+        printf("Shader %d built OK.\n", shaderProgram);
 
     return shaderProgram;
 }
@@ -163,8 +178,12 @@ void initShaders(EventHandler& eventHandler)
     triShaderProgram = buildShaderProgram(triVertexSource, triFragmentSource, false);
 
     // Get shader uniforms and initialize them
+    shaderViewport2 = glGetUniformLocation(quadsTextShaderProgram, "viewport");
+    shaderTextureSampler2 = glGetUniformLocation(quadsTextShaderProgram, "texSampler");
+
     shaderViewport = glGetUniformLocation(quadFontShaderProgram, "viewport");
     shaderFontSize = glGetUniformLocation(quadFontShaderProgram, "fontSize");
+    shaderTextureSampler = glGetUniformLocation(quadFontShaderProgram, "texSampler");
 
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
@@ -217,14 +236,15 @@ void initFontTexture(EventHandler& eventHandler)
         printf("texFont dimensions %dx%d\n", texFont->tex_width, texFont->tex_height);
 
         // Enable blending for texture alpha component
-        glEnable( GL_BLEND );
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // Generate a GL texture object
-        glGenTextures(1, &fontTextureObj);
+        glGenTextures(1, &texFont->texobj);
 
         // Bind GL texture
-        glBindTexture(GL_TEXTURE_2D, fontTextureObj);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texFont->texobj);
 
         // Set the GL texture's wrapping and stretching properties
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -233,39 +253,45 @@ void initFontTexture(EventHandler& eventHandler)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        texFont->texobj = fontTextureObj;
-        unsigned int* txf_pixels = new unsigned int[texFont->tex_width * texFont->tex_height];
+        unsigned int* texFontPixels = new unsigned int[texFont->tex_width * texFont->tex_height];
         for (int i = 0; i < texFont->tex_width * texFont->tex_height; ++i)
         {
+            // Convert luminance texture to RGBA (8-bit to 32-bit)
             if (texFont->teximage[i])
             {
                 unsigned char c = texFont->teximage[i];
-                txf_pixels[i] = c | c << 8 | c << 16 | c << 24;
+                texFontPixels[i] = c | c << 8 | c << 16 | c << 24;
             }
             else
-                txf_pixels[i] = 0;
+                texFontPixels[i] = 0;
         }
 
-        // Copy SDL surface image to GL texture
+        // Copy pixels to GL texture
         GLint format = GL_RGBA;
         glTexImage2D(GL_TEXTURE_2D, 0, format, 
                      texFont->tex_width, texFont->tex_height, 
-                     0, format, GL_UNSIGNED_BYTE, txf_pixels);
+                     0, format, GL_UNSIGNED_BYTE, texFontPixels);
+        delete[] texFontPixels;
 
         fontSize[0] = (GLfloat)texFont->tex_width;
         fontSize[1] = (GLfloat)texFont->tex_height;
         updateShader(eventHandler);
-
-        delete[] txf_pixels;
-    }
+     }
     else
         printf("error loading texFont\n");
+
+    int width, ascent, descent;
+    txfGetStringMetrics(texFont, "O", 1, &width, &ascent, &descent);
+    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "O", width, ascent, descent); 
+    txfGetStringMetrics(texFont, "p", 1, &width, &ascent, &descent);
+    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "p", width, ascent, descent); 
+    txfGetStringMetrics(texFont, "e", 1, &width, &ascent, &descent);
+    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "e", width, ascent, descent); 
 }
 
 void destroyFontTexture()
 {
     txfUnloadFont(texFont);
-    glDeleteTextures(1, &fontTextureObj);
 }
 
 void redraw(EventHandler& eventHandler)
@@ -275,22 +301,26 @@ void redraw(EventHandler& eventHandler)
 
     // All shaders use position geometry, so enable it here
     glEnableVertexAttribArray(vertexPositionIndex);
-   
+
     // Draw a triangle with a colorful shader
     glUseProgram(triShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
     glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    
+
     // Draw a quad with a font texture shader
     glUseProgram(quadFontShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
     glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    // Draw quads with a text shader
-    // txfRenderGlyph(texFont, 'O');
-
+    // Draw a quad with a text shader
+    glEnableVertexAttribArray(vertexTexCoordIndex);
+    glUseProgram(quadsTextShaderProgram);
+    txfRenderGlyph(texFont, 'O');
+    glDisableVertexAttribArray(vertexTexCoordIndex);
+   
+    // Done with position geometry
     glDisableVertexAttribArray(vertexPositionIndex);
 
     // Swap front/back framebuffers
