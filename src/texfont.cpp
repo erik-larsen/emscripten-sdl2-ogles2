@@ -326,9 +326,10 @@ txfEstablishTexture(TexFont * txf, GLuint texobj)
     }
  
     glBindTexture(GL_TEXTURE_2D, txf->texobj);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE,
+    const GLenum format = GL_ALPHA; // rgb = 0, a = teximage
+    glTexImage2D(GL_TEXTURE_2D, 0, format,
         txf->tex_width, txf->tex_height, 0,
-        GL_LUMINANCE, GL_UNSIGNED_BYTE, txf->teximage);
+        format, GL_UNSIGNED_BYTE, txf->teximage);
 
     return txf->texobj;
 }
@@ -471,7 +472,7 @@ txfRenderGlyph(TexFont * txf, int c)
 }
 
 void
-txfRenderString(TexFont * txf, const char *string, int len)
+txfRenderString(TexFont * txf, const char *string)
 {
     // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
 
@@ -483,6 +484,6 @@ txfRenderString(TexFont * txf, const char *string, int len)
     // subsequent draw string calls check map and reuse vbo id if present
     // optional: create, draw, delete string API added to texfont
 
-    /*for (int i = 0; i < len; i++)
+    /*for (int i = 0; i < strlen(string); i++)
         txfRenderGlyph(txf, string[i]);*/
 }

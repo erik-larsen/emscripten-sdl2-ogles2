@@ -83,14 +83,18 @@ const GLchar* quadFontVertexSource =
     "    vTexCoord.y = position.y;                              \n"
     "}                                                          \n";
 
-// Simple texture fragment shader, shared by text quads and font quad
-const GLchar* simpleTextureFragmentSource =
+// Font texture fragment shader, shared by text quads and font quad
+const GLchar* fontFragmentSource =
     "precision mediump float;                                   \n"
     "uniform sampler2D texSampler;                              \n"
     "varying vec2 vTexCoord;                                    \n"
     "void main()                                                \n"
     "{                                                          \n"
+    "    // Text opacity (alpha texture)                        \n"
     "    gl_FragColor = texture2D(texSampler, vTexCoord);       \n"
+    "                                                           \n"
+    "    // Text color white                                    \n"
+    "    gl_FragColor.xyz = vec3(1.0, 1.0, 1.0);                \n"
     "}                                                          \n";
 
 // Colorful triangle geometry, vertex & fragment shaders
@@ -173,8 +177,8 @@ GLuint buildShaderProgram(const GLchar* vertexSource, const GLchar* fragmentSour
 void initShaders(EventHandler& eventHandler)
 {
     // Compile & link shaders
-    quadsTextShaderProgram = buildShaderProgram(quadsTextVertexSource, simpleTextureFragmentSource, true);
-    quadFontShaderProgram = buildShaderProgram(quadFontVertexSource, simpleTextureFragmentSource, false);
+    quadsTextShaderProgram = buildShaderProgram(quadsTextVertexSource, fontFragmentSource, true);
+    quadFontShaderProgram = buildShaderProgram(quadFontVertexSource, fontFragmentSource, false);
     triShaderProgram = buildShaderProgram(triVertexSource, triFragmentSource, false);
 
     // Get shader uniforms and initialize them
@@ -239,12 +243,8 @@ void initFontTexture(EventHandler& eventHandler)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // Generate a GL texture object
-        glGenTextures(1, &texFont->texobj);
-
-        // Bind GL texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texFont->texobj);
+        // Generate, bind, and upload font texture
+        txfEstablishTexture(texFont, 0);
 
         // Set the GL texture's wrapping and stretching properties
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -253,40 +253,14 @@ void initFontTexture(EventHandler& eventHandler)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        unsigned int* texFontPixels = new unsigned int[texFont->tex_width * texFont->tex_height];
-        for (int i = 0; i < texFont->tex_width * texFont->tex_height; ++i)
-        {
-            // Convert luminance texture to RGBA (8-bit to 32-bit)
-            if (texFont->teximage[i])
-            {
-                unsigned char c = texFont->teximage[i];
-                texFontPixels[i] = c | c << 8 | c << 16 | c << 24;
-            }
-            else
-                texFontPixels[i] = 0;
-        }
-
-        // Copy pixels to GL texture
-        GLint format = GL_RGBA;
-        glTexImage2D(GL_TEXTURE_2D, 0, format, 
-                     texFont->tex_width, texFont->tex_height, 
-                     0, format, GL_UNSIGNED_BYTE, texFontPixels);
-        delete[] texFontPixels;
-
         fontSize[0] = (GLfloat)texFont->tex_width;
         fontSize[1] = (GLfloat)texFont->tex_height;
+
         updateShader(eventHandler);
      }
     else
         printf("error loading texFont\n");
 
-    int width, ascent, descent;
-    txfGetStringMetrics(texFont, "O", 1, &width, &ascent, &descent);
-    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "O", width, ascent, descent); 
-    txfGetStringMetrics(texFont, "p", 1, &width, &ascent, &descent);
-    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "p", width, ascent, descent); 
-    txfGetStringMetrics(texFont, "e", 1, &width, &ascent, &descent);
-    printf("txfGetStringMetrics '%s' width=%d ascent=%d descent=%d\n", "e", width, ascent, descent); 
 }
 
 void destroyFontTexture()
