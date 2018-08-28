@@ -3,7 +3,7 @@
 
 This project is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These samples can serve as building blocks to aid in porting C++ graphics apps to the browser.
 
-The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
+The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 80s and 90s by Silicon Graphics.  This work is also inspired by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), also made possible by Emscripten.
 
 
 ## Samples
