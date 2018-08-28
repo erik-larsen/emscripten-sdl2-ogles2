@@ -32,7 +32,7 @@ Demonstrates TrueType text, using SDL to render a string into a texture and appl
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 
-Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad. 
+Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad, as well as rendering of text strings.
 
 ## Motivation
 
