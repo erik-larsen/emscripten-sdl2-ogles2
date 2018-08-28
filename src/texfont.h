@@ -4,7 +4,8 @@
 // https://github.com/markkilgard/glut/tree/master/progs/texfont
 // https://web.archive.org/web/20010616211947/http://reality.sgi.com/opengl/tips/TexFont/TexFont.html
 //
-
+#include <string>
+#include <unordered_map>
 #include <SDL_opengles2.h>
 
 enum TxfFormat {TXF_FORMAT_BYTE, TXF_FORMAT_BITMAP};
@@ -47,6 +48,7 @@ typedef struct {
     TexGlyphInfo *tgi;
     TexGlyphVertexInfo *tgvi;
     TexGlyphVertexInfo **lut;
+    std::unordered_map<std::string, GLuint> stringVBOs;
 } TexFont;
 
 extern char *txfErrorString(void);

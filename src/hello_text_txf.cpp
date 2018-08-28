@@ -90,12 +90,11 @@ const GLchar* fontFragmentSource =
     "varying vec2 vTexCoord;                                    \n"
     "void main()                                                \n"
     "{                                                          \n"
-    "    // Text opacity (alpha texture)                        \n"
+    "    // Text opacity (GL_ALPHA texture)                     \n"
     "    gl_FragColor = texture2D(texSampler, vTexCoord);       \n"
     "                                                           \n"
     "    // Text color white                                    \n"
     "    gl_FragColor.xyz = vec3(1.0, 1.0, 1.0);                \n"
-    "    //gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);                \n"
     "}                                                          \n";
 
 // Colorful triangle geometry, vertex & fragment shaders
@@ -283,13 +282,13 @@ void redraw(EventHandler& eventHandler)
     glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    // Draw a quad with a font texture shader
+    // Draw a texture atlas quad with a font texture shader
     glUseProgram(quadFontShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
     glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    // Draw a quad with a text shader
+    // Draw text string quads with a text shader
     glEnableVertexAttribArray(vertexTexCoordIndex);
     glUseProgram(quadsTextShaderProgram);
     txfRenderString(texFont, "OpenGL", -64.0f * 2.5f, 0.0f);
