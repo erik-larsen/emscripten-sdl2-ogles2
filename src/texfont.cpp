@@ -471,8 +471,7 @@ txfRenderString(TexFont * txf, const char *str, float x, float y)
             glGenBuffers(1, &quadsVboId);
             glBindBuffer(GL_ARRAY_BUFFER, quadsVboId);
             glBufferData(GL_ARRAY_BUFFER, 5 * 6 * numChars * sizeof(GLfloat), stringVertexArray, GL_STATIC_DRAW);
-            printf("BUILT vbo %d for string '%s'\n", quadsVboId, str);
-            //delete[] stringVertexArray;
+            delete[] stringVertexArray;
 
             // Cache the string/VBO pair
             txf->stringVBOs.insert({str, quadsVboId});
@@ -482,8 +481,6 @@ txfRenderString(TexFont * txf, const char *str, float x, float y)
             // Found - bind VBO
             quadsVboId = stringVBO->second;
             glBindBuffer(GL_ARRAY_BUFFER, quadsVboId);
-            printf("REUSING vbo %d for string '%s'\n", quadsVboId, str);
-
         }
 
         // Draw the string VBO
