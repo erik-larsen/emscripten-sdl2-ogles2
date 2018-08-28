@@ -66,17 +66,13 @@ extern void txfBindFontTexture(
 
 extern void txfGetStringMetrics(
     TexFont * txf,
-    const char *string,
+    const char *str,
     int len,
     int *width,
     int *max_ascent,
     int *max_descent);
 
-extern void txfRenderGlyph(
-    TexFont * txf,
-    int c);
-
 extern void txfRenderString(
     TexFont * txf,
     const char *string,
-    int len);
+    float x, float y);

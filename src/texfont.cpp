@@ -10,6 +10,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <string>
+#include <unordered_map>
+
 #include "texfont.h"
 
 // Enable to print out font texture bytes
@@ -229,7 +233,22 @@ txfLoadFont(const char *filename)
         va[offset+2] = 0.0f;
         va[offset+3] = tgvi.t1[0];
         va[offset+4] = tgvi.t1[1];       
+
+        // Hack, to correct tgvi.advance
+        // Appears to be max x + min x, when it should be max x - min x
+        GLfloat minX = va[0];
+        for (int i = 1; i < 4; ++i)
+        {
+            if (va[i * 5] < minX)
+                minX = va[i * 5];
+        }
+        tgvi.advance -= (minX * 2.0f);
+        tgvi.advance += 3.0f;
+    
     }
+
+
+
 
     int min_glyph = txf->tgi[0].c;
     int max_glyph = min_glyph;
@@ -341,22 +360,6 @@ txfBindFontTexture(TexFont * txf)
 }
 
 void
-txfUnloadFont(TexFont * txf)
-{
-    if (txf)
-    {
-        if (txf->texobj != 0)
-            glDeleteTextures(1, &txf->texobj);
-
-        delete[] txf->teximage;
-        delete[] txf->tgi;
-        delete[] txf->tgvi;
-        delete[] txf->lut;
-        delete txf;
-    }
-}
-
-void
 txfGetStringMetrics(
     TexFont * txf,
     const char *string,
@@ -394,6 +397,169 @@ txfGetStringMetrics(
 void
 txfRenderGlyph(TexFont * txf, int c)
 {
+    // Copy glyph c vertexArray into string vertexArray
+    // During copy, add x translation by accumulated advance amount
+    /*
+    glBegin(GL_QUADS);
+    glTexCoord2fv(tgvi->t0);
+    glVertex2sv(tgvi->v0);
+    glTexCoord2fv(tgvi->t1);
+    glVertex2sv(tgvi->v1);
+    glTexCoord2fv(tgvi->t2);
+    glVertex2sv(tgvi->v2);
+    glTexCoord2fv(tgvi->t3);
+    glVertex2sv(tgvi->v3);
+    glEnd();
+    glTranslatef(tgvi->advance, 0.0, 0.0);
+    */
+
+#ifdef TXF_DEBUG
+    TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
+    printf ("tgvi '%c'\n", (char)c);
+    printf ("texCoord 0 %f,%f  ", tgvi->t0[0], tgvi->t0[1]);
+    printf ("position 0 %d,%d\n", tgvi->v0[0], tgvi->v0[1]);
+    printf ("texCoord 1 %f,%f  ", tgvi->t1[0], tgvi->t1[1]);
+    printf ("position 1 %d,%d\n", tgvi->v1[0], tgvi->v1[1]);
+    printf ("texCoord 2 %f,%f  ", tgvi->t2[0], tgvi->t2[1]);
+    printf ("position 2 %d,%d\n", tgvi->v2[0], tgvi->v2[1]);
+    printf ("texCoord 3 %f,%f  ", tgvi->t3[0], tgvi->t3[1]);
+    printf ("position 3 %d,%d\n", tgvi->v3[0], tgvi->v3[1]);
+     
+    for (int i = 0; i < 4; ++i)
+    {
+        GLfloat* va = tgvi->vertexArray;
+        printf("tgvi va pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                i, va[i*5], va[i*5+1], va[i*5+2],
+                i, va[i*5+3], va[i*5+4]);
+    }
+#endif
+}
+
+// Cache strings and their VBOs
+static std::unordered_map<std::string, GLuint> txfStringVBOs;
+
+void
+txfRenderString(TexFont * txf, const char *str, float x, float y)
+{
+    size_t numChars = strlen(str);
+    if (txf != nullptr && numChars > 0)
+    {
+        const GLint vertexPositionSize = 3, // x,y,z
+                    vertexTexCoordSize = 2, // u,v
+                    vertexSize = vertexPositionSize + vertexTexCoordSize, // x,y,z + u,v
+                    numQuadVertices = 6, // two independent triangles
+                    quadStride = vertexSize * numQuadVertices,
+                    vertexStrideBytes = vertexSize * sizeof(GLfloat),
+                    numVertices = numQuadVertices * numChars,
+                    stringVertexArrayBytes = vertexStrideBytes * numQuadVertices;
+
+        GLuint quadsVboId = 0;
+
+        auto stringVBO = txfStringVBOs.find(str);
+        if (stringVBO == txfStringVBOs.end())
+        {
+            // Not found - build VBO and add to map
+            GLfloat* stringVertexArray = new GLfloat[5 * 6 * numChars];
+            GLfloat advance = x;
+
+            for (int i = 0; i < numChars; ++i)
+            {
+                char c = str[i];
+                TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
+                if (tgvi != nullptr)
+                {
+                    // Copy char's quad tristrip vertexArray into triangles stringVertexArray
+
+                    // Triangle #1
+                    for (int j = 0; j < 3; ++j)
+                        for (int k = 0; k < 5; ++k)
+                            stringVertexArray[i * 5 * 6 + j * 5 + k] = tgvi->vertexArray[j * vertexSize + k];
+
+                    // Triangle #2
+                    for (int j = 3; j < 6; ++j)
+                        for (int k = 0; k < 5; ++k)
+                            stringVertexArray[i * 5 * 6 + j * 5 + k] = tgvi->vertexArray[(j - 2) * vertexSize + k];
+
+
+                    // Translate x positions by accumulated advance
+                    for (int j = 0; j < 6; ++j)
+                    {
+                        stringVertexArray[i * 5 * 6 + j * 5] += advance;
+                        stringVertexArray[i * 5 * 6 + j * 5 + 1] += y;
+                    }
+
+                    advance += tgvi->advance;
+
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        GLfloat* va = tgvi->vertexArray;
+                        printf("tgvi va pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                                i, va[i*5], va[i*5+1], va[i*5+2],
+                                i, va[i*5+3], va[i*5+4]);
+                    }
+                    printf ("tgvi advance %f\n", tgvi->advance);
+
+                    for (int i = 0; i < numVertices; ++i)
+                    {
+                        GLfloat* va = stringVertexArray;
+                        printf("strva pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
+                                i, va[i*5], va[i*5+1], va[i*5+2],
+                                i, va[i*5+3], va[i*5+4]);
+                    }
+
+                }
+            }
+
+            // Build VBO
+            glGenBuffers(1, &quadsVboId);
+            glBindBuffer(GL_ARRAY_BUFFER, quadsVboId);
+            glBufferData(GL_ARRAY_BUFFER, 5 * 6 * numChars * sizeof(GLfloat), stringVertexArray, GL_STATIC_DRAW);
+            printf("BUILT vbo %d for string '%s'\n", quadsVboId, str);
+            //delete[] stringVertexArray;
+
+            // Cache the string/VBO pair
+            txfStringVBOs.insert({str, quadsVboId});
+        }
+        else 
+        {
+            // Found - bind VBO
+            quadsVboId = stringVBO->second;
+            glBindBuffer(GL_ARRAY_BUFFER, quadsVboId);
+            printf("REUSING vbo %d for string '%s'\n", quadsVboId, str);
+
+        }
+
+        if (quadsVboId != 0)
+        {
+            const GLuint vertexPositionIndex = 0, 
+                         vertexTexCoordIndex = 1;            
+            GLuint offset = 0;
+            glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (const void*)offset);
+            offset += 3 * sizeof(GLfloat);
+            glVertexAttribPointer(vertexTexCoordIndex, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (const void*)offset);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6 * numChars);
+        }
+    }
+
+  
+
+    // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
+    // TXF strings
+    // pre-reserve std C++ vector array of structs, with geom and texcoords as unit quads
+    // run through string and update geom and texcoords according to glyph and place in string
+    // create vbo from vector
+    // maintain std unordered map of [“string”,vbo id] to reuse string vbos on subsequent draws 
+    // subsequent draw string calls check map and reuse vbo id if present
+    // optional: create, draw, delete string API added to texfont
+
+    /*for (int i = 0; i < strlen(string); i++)
+        txfRenderGlyph(txf, string[i]);*/
+
+#ifdef DISABLED_CODE
+    if (strlen(string) > 0)
+        txfRenderGlyph(txf, string[0]);
+
     // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
     TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
 
@@ -434,56 +600,25 @@ txfRenderGlyph(TexFont * txf, int c)
 
     //glDeleteBuffers(1, &quadVboId);
 
-    /*
-    glBegin(GL_QUADS);
-    glTexCoord2fv(tgvi->t0);
-    glVertex2sv(tgvi->v0);
-    glTexCoord2fv(tgvi->t1);
-    glVertex2sv(tgvi->v1);
-    glTexCoord2fv(tgvi->t2);
-    glVertex2sv(tgvi->v2);
-    glTexCoord2fv(tgvi->t3);
-    glVertex2sv(tgvi->v3);
-    glEnd();
-    glTranslatef(tgvi->advance, 0.0, 0.0);
-    */
 
-#ifdef TXF_DEBUG
-    TexGlyphVertexInfo *tgvi = getTCVI(txf, c);
-    printf ("tgvi '%c'\n", (char)c);
-    printf ("texCoord 0 %f,%f  ", tgvi->t0[0], tgvi->t0[1]);
-    printf ("position 0 %d,%d\n", tgvi->v0[0], tgvi->v0[1]);
-    printf ("texCoord 1 %f,%f  ", tgvi->t1[0], tgvi->t1[1]);
-    printf ("position 1 %d,%d\n", tgvi->v1[0], tgvi->v1[1]);
-    printf ("texCoord 2 %f,%f  ", tgvi->t2[0], tgvi->t2[1]);
-    printf ("position 2 %d,%d\n", tgvi->v2[0], tgvi->v2[1]);
-    printf ("texCoord 3 %f,%f  ", tgvi->t3[0], tgvi->t3[1]);
-    printf ("position 3 %d,%d\n", tgvi->v3[0], tgvi->v3[1]);
-     
-    for (int i = 0; i < 4; ++i)
-    {
-        GLfloat* va = tgvi->vertexArray;
-        printf("tgvi va pos[%d] (%f,%f,%f) tex[%d] (%f,%f)\n",
-                i, va[i*5], va[i*5+1], va[i*5+2],
-                i, va[i*5+3], va[i*5+4]);
-    }
+
 #endif
-
 }
 
 void
-txfRenderString(TexFont * txf, const char *string)
+txfUnloadFont(TexFont * txf)
 {
-    // WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP WIP
+    if (txf)
+    {
+        if (txf->texobj != 0)
+            glDeleteTextures(1, &txf->texobj);
 
-    // TXF strings
-    // pre-reserve std C++ vector array of structs, with geom and texcoords as unit quads
-    // run through string and update geom and texcoords according to glyph and place in string
-    // create vbo from vector
-    // maintain std unordered map of [“string”,vbo id] to reuse string vbos on subsequent draws 
-    // subsequent draw string calls check map and reuse vbo id if present
-    // optional: create, draw, delete string API added to texfont
+        // TODO: Delete string VBO cache
 
-    /*for (int i = 0; i < strlen(string); i++)
-        txfRenderGlyph(txf, string[i]);*/
+        delete[] txf->teximage;
+        delete[] txf->tgi;
+        delete[] txf->tgvi;
+        delete[] txf->lut;
+        delete txf;
+    }
 }

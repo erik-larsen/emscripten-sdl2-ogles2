@@ -95,6 +95,7 @@ const GLchar* fontFragmentSource =
     "                                                           \n"
     "    // Text color white                                    \n"
     "    gl_FragColor.xyz = vec3(1.0, 1.0, 1.0);                \n"
+    "    //gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);                \n"
     "}                                                          \n";
 
 // Colorful triangle geometry, vertex & fragment shaders
@@ -291,7 +292,8 @@ void redraw(EventHandler& eventHandler)
     // Draw a quad with a text shader
     glEnableVertexAttribArray(vertexTexCoordIndex);
     glUseProgram(quadsTextShaderProgram);
-    txfRenderGlyph(texFont, 'O');
+    txfRenderString(texFont, "OpenGL", -64.0f * 2.5f, 0.0f);
+    txfRenderString(texFont, "3D", -64.0f, -64.0f * 1.5f);
     glDisableVertexAttribArray(vertexTexCoordIndex);
    
     // Done with position geometry

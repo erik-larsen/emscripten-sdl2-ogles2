@@ -6,6 +6,8 @@
 #include <SDL_opengles2.h>
 #include "events.h"
 
+// #define EVENTS_DEBUG
+
 void EventHandler::windowResizeEvent(int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -211,9 +213,10 @@ void EventHandler::processEvents()
                 break;
         }
 
-        // Debugging
-        printf ("event=%d mousePos=%d,%d mouseButtonDown=%d fingerDown=%d pinch=%d aspect=%f window=%dx%d\n", 
-                 event.type, mMousePositionX, mMousePositionY, mMouseButtonDown, mFingerDown, mPinch, mCamera.aspect(), mCamera.windowSize().width, mCamera.windowSize().height);      
-        printf ("    zoom=%f pan=%f,%f\n", mCamera.zoom(), mCamera.pan()[0], mCamera.pan()[1]);
+        #ifdef EVENTS_DEBUG
+            printf ("event=%d mousePos=%d,%d mouseButtonDown=%d fingerDown=%d pinch=%d aspect=%f window=%dx%d\n", 
+                    event.type, mMousePositionX, mMousePositionY, mMouseButtonDown, mFingerDown, mPinch, mCamera.aspect(), mCamera.windowSize().width, mCamera.windowSize().height);      
+            printf ("    zoom=%f pan=%f,%f\n", mCamera.zoom(), mCamera.pan()[0], mCamera.pan()[1]);
+        #endif
     }
 }
