@@ -46,4 +46,4 @@ These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, net
 
 ### Why OpenGLES2?  
 
-These demos require GPU accelerated graphics which is WebGL in the browser.  And Emscripten generates WebGL by transpiling OpenGLES 2 code.
+These demos require GPU accelerated graphics. For the browser, this means WebGL.  And the way to get WebGL is to write OpenGLES code for Emscripten to transpile to WebGL.
