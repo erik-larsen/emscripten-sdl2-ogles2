@@ -11,7 +11,7 @@
 //     emrun hello_text_txf.html
 //
 // Result:
-//     A TXF text quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
+//     A TXF font quad and colorful triangle.  Left mouse pans, mouse wheel zooms in/out.
 //
 
 #ifdef __EMSCRIPTEN__
@@ -24,33 +24,50 @@
 #include "events.h"
 #include "texfont.h"
 
-// Triangle
-GLuint triangleVbo = 0;
+// Vertex attribute indices for all shaders
+const GLuint vertexPositionIndex = 0, 
+             vertexTexCoordIndex = 1;
 
-// Text
-const char* cFontName = "media/rockfont.txf";
-TexFont* txf = nullptr;
-GLuint fontTextureObj = 0;
-GLuint quadFontVbo = 0;
-GLuint quadsTextStringVbo = 0;
+// Text quads geometry and vertex shader
+GLuint quadsTextShaderProgram = 0;
+GLint shaderViewport2;
+GLint shaderTextureSampler2;
 
-// Shader vars
-const GLint positionAttrib = 0;
-GLfloat textSize[2] = {0.0f, 0.0f};
-GLint shaderPan, shaderZoom, shaderAspect, shaderViewport, shaderTextSize;
-
-//  Text quad vertex & fragment shaders
-GLuint quadFontShaderProgram = 0;
-const GLchar* quadFontVertexSource =
-    "attribute vec4 position;                                   \n"
-    "varying vec2 texCoord;                                     \n"
+const GLchar* quadsTextVertexSource =
     "uniform vec2 viewport;                                     \n"
-    "uniform vec2 textSize;                                     \n"
+    "attribute vec4 position;                                   \n"
+    "attribute vec2 texCoord;                                   \n"
+    "varying vec2 vTexCoord;                                    \n"    
     "void main()                                                \n"
     "{                                                          \n"
     "    gl_Position = vec4(position.xyz, 1.0);                 \n"
-    "    gl_Position.x *= textSize.x;                           \n"
-    "    gl_Position.y *= textSize.y;                           \n"
+    "                                                           \n"
+    "    // Ortho projection                                    \n"
+    "    gl_Position.x += 1.0;                                  \n"
+    "    gl_Position.x *= 2.0 / viewport.x;                     \n"
+    "    gl_Position.y += 1.0;                                  \n"
+    "    gl_Position.y *= 2.0 / viewport.y;                     \n"
+    "                                                           \n"
+    "    vTexCoord = texCoord;                                  \n"  
+    "}                                                          \n";
+
+// Font quad texture, geometry, and vertex shader
+const char* cFontName = "media/rockfont.txf";
+TexFont* texFont = nullptr;
+GLuint quadFontVbo = 0;
+GLuint quadFontShaderProgram = 0;
+GLfloat fontSize[2] = {0.0f, 0.0f};
+GLint shaderViewport, shaderFontSize, shaderTextureSampler;
+const GLchar* quadFontVertexSource =
+    "uniform vec2 viewport;                                     \n"
+    "uniform vec2 fontSize;                                     \n"
+    "attribute vec4 position;                                   \n"
+    "varying vec2 vTexCoord;                                    \n"
+    "void main()                                                \n"
+    "{                                                          \n"
+    "    gl_Position = vec4(position.xyz, 1.0);                 \n"
+    "    gl_Position.x *= fontSize.x;                           \n"
+    "    gl_Position.y *= fontSize.y;                           \n"
     "                                                           \n"
     "    // Translate to lower left viewport                    \n"
     "    gl_Position.x -= viewport.x / 2.0;                     \n"
@@ -62,22 +79,28 @@ const GLchar* quadFontVertexSource =
     "    gl_Position.y += 1.0;                                  \n"
     "    gl_Position.y *= 2.0 / viewport.y;                     \n"
     "                                                           \n"
-    "    // Text subrectangle from overall texture              \n"
-    "    texCoord.x = position.x;                               \n"
-    "    texCoord.y = position.y;                               \n"
+    "    vTexCoord.x = position.x;                              \n"
+    "    vTexCoord.y = position.y;                              \n"
     "}                                                          \n";
 
-const GLchar* quadFontFragmentSource =
+// Font texture fragment shader, shared by text quads and font quad
+const GLchar* fontFragmentSource =
     "precision mediump float;                                   \n"
-    "varying vec2 texCoord;                                     \n"
     "uniform sampler2D texSampler;                              \n"
+    "varying vec2 vTexCoord;                                    \n"
     "void main()                                                \n"
     "{                                                          \n"
-    "    gl_FragColor = texture2D(texSampler, texCoord);        \n"
+    "    // Text opacity (GL_ALPHA texture)                     \n"
+    "    gl_FragColor = texture2D(texSampler, vTexCoord);       \n"
+    "                                                           \n"
+    "    // Text color white                                    \n"
+    "    gl_FragColor.xyz = vec3(1.0, 1.0, 1.0);                \n"
     "}                                                          \n";
 
-// Colorful triangle vertex & fragment shaders
+// Colorful triangle geometry, vertex & fragment shaders
+GLuint triangleVbo = 0;
 GLuint triShaderProgram = 0;
+GLint shaderPan, shaderZoom, shaderAspect;
 const GLchar* triVertexSource =
     "uniform vec2 pan;                             \n"
     "uniform float zoom;                           \n"
@@ -105,9 +128,14 @@ void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
 
+    glUseProgram(quadsTextShaderProgram);
+    glUniform2fv(shaderViewport2, 1, camera.viewport());
+    glUniform1i(shaderTextureSampler2, 0);
+
     glUseProgram(quadFontShaderProgram);
     glUniform2fv(shaderViewport, 1, camera.viewport());
-    glUniform2fv(shaderTextSize, 1, textSize);
+    glUniform2fv(shaderFontSize, 1, fontSize);
+    glUniform1i(shaderTextureSampler, 0);
 
     glUseProgram(triShaderProgram);
     glUniform2fv(shaderPan, 1, camera.pan());
@@ -115,7 +143,7 @@ void updateShader(EventHandler& eventHandler)
     glUniform1f(shaderAspect, camera.aspect());
 }
 
-GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
+GLuint buildShaderProgram(const GLchar* vertexSource, const GLchar* fragmentSource, bool bUseTexCoords)
 {
     // Create and compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -131,9 +159,17 @@ GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
-    glBindAttribLocation(shaderProgram, positionAttrib, "position");
-    glEnableVertexAttribArray(positionAttrib);
+    glBindAttribLocation(shaderProgram, vertexPositionIndex, "position");
+    if (bUseTexCoords)
+        glBindAttribLocation(shaderProgram, vertexTexCoordIndex, "texCoord");
+    
     glLinkProgram(shaderProgram);
+
+    GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR)
+        printf("ERROR: Shader %d failed to build, error code %d\n", shaderProgram, glError);
+    else
+        printf("Shader %d built OK.\n", shaderProgram);
 
     return shaderProgram;
 }
@@ -141,17 +177,22 @@ GLuint initShader(const GLchar* vertexSource, const GLchar* fragmentSource)
 void initShaders(EventHandler& eventHandler)
 {
     // Compile & link shaders
-    quadFontShaderProgram = initShader(quadFontVertexSource, quadFontFragmentSource);
-    triShaderProgram = initShader(triVertexSource, triFragmentSource);
+    quadsTextShaderProgram = buildShaderProgram(quadsTextVertexSource, fontFragmentSource, true);
+    quadFontShaderProgram = buildShaderProgram(quadFontVertexSource, fontFragmentSource, false);
+    triShaderProgram = buildShaderProgram(triVertexSource, triFragmentSource, false);
 
-    // Get shader variables and initalize them
+    // Get shader uniforms and initialize them
+    shaderViewport2 = glGetUniformLocation(quadsTextShaderProgram, "viewport");
+    shaderTextureSampler2 = glGetUniformLocation(quadsTextShaderProgram, "texSampler");
+
     shaderViewport = glGetUniformLocation(quadFontShaderProgram, "viewport");
-    shaderTextSize = glGetUniformLocation(quadFontShaderProgram, "textSize");
+    shaderFontSize = glGetUniformLocation(quadFontShaderProgram, "fontSize");
+    shaderTextureSampler = glGetUniformLocation(quadFontShaderProgram, "texSampler");
 
     shaderPan = glGetUniformLocation(triShaderProgram, "pan");
     shaderZoom = glGetUniformLocation(triShaderProgram, "zoom");    
     shaderAspect = glGetUniformLocation(triShaderProgram, "aspect");
-    
+
     updateShader(eventHandler);
 }
 
@@ -191,25 +232,19 @@ void debugPrintSurface(SDL_Surface* surface, const char* name, bool dumpPixels)
     }
 }
 
-void initTextTexture(EventHandler& eventHandler)
+void initFontTexture(EventHandler& eventHandler)
 {
-    // Determine GL texture format
-    GLint format = GL_RGBA;
-
-    txf = txfLoadFont(cFontName);
-    if (txf)
+    texFont = txfLoadFont(cFontName);
+    if (texFont)
     {
-        printf("txf dimensions %dx%d\n", txf->tex_width, txf->tex_height);
+        printf("texFont dimensions %dx%d\n", texFont->tex_width, texFont->tex_height);
 
         // Enable blending for texture alpha component
-        glEnable( GL_BLEND );
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // Generate a GL texture object
-        glGenTextures(1, &fontTextureObj);
-
-        // Bind GL texture
-        glBindTexture(GL_TEXTURE_2D, fontTextureObj);
+        // Generate, bind, and upload font texture
+        txfEstablishTexture(texFont, 0);
 
         // Set the GL texture's wrapping and stretching properties
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -218,32 +253,19 @@ void initTextTexture(EventHandler& eventHandler)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        txf->texobj = fontTextureObj;
-        unsigned int* txf_pixels = new unsigned int[txf->tex_width * txf->tex_height];
-        for (int i = 0; i < txf->tex_width * txf->tex_height; ++i)
-        {
-            if (txf->teximage[i])
-            {
-                unsigned char c = txf->teximage[i];
-                txf_pixels[i] = c | c << 8 | c << 16 | c << 24;
-            }
-            else
-                txf_pixels[i] = 0;
-        }
+        fontSize[0] = (GLfloat)texFont->tex_width;
+        fontSize[1] = (GLfloat)texFont->tex_height;
 
-        // Copy SDL surface image to GL texture
-        glTexImage2D(GL_TEXTURE_2D, 0, format, 
-                     txf->tex_width, txf->tex_height, 
-                     0, format, GL_UNSIGNED_BYTE, txf_pixels);
-
-        textSize[0] = (GLfloat)txf->tex_width;
-        textSize[1] = (GLfloat)txf->tex_height;
         updateShader(eventHandler);
-
-        delete[] txf_pixels;
-    }
+     }
     else
-        printf("error loading txf\n");
+        printf("error loading texFont\n");
+
+}
+
+void destroyFontTexture()
+{
+    txfUnloadFont(texFont);
 }
 
 void redraw(EventHandler& eventHandler)
@@ -251,17 +273,30 @@ void redraw(EventHandler& eventHandler)
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw the triangle VBO with a colorful shader
+    // All shaders use position geometry, so enable it here
+    glEnableVertexAttribArray(vertexPositionIndex);
+
+    // Draw a triangle with a colorful shader
     glUseProgram(triShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, triangleVbo);
-    glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    
-    // Draw the quad VBO with a text texture shader
+
+    // Draw a texture atlas quad with a font texture shader
     glUseProgram(quadFontShaderProgram);
     glBindBuffer(GL_ARRAY_BUFFER, quadFontVbo);
-    glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(vertexPositionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Draw text string quads with a text shader
+    glEnableVertexAttribArray(vertexTexCoordIndex);
+    glUseProgram(quadsTextShaderProgram);
+    txfRenderString(texFont, "OpenGL", -64.0f * 2.5f, 0.0f);
+    txfRenderString(texFont, "3D", -64.0f, -64.0f * 1.5f);
+    glDisableVertexAttribArray(vertexTexCoordIndex);
+   
+    // Done with position geometry
+    glDisableVertexAttribArray(vertexPositionIndex);
 
     // Swap front/back framebuffers
     eventHandler.swapWindow();
@@ -286,7 +321,7 @@ int main(int argc, char** argv)
     // Initialize graphics
     initShaders(eventHandler);
     initGeometry();
-    initTextTexture(eventHandler);
+    initFontTexture(eventHandler);
 
     // Start the main loop
     void* mainLoopArg = &eventHandler;
@@ -299,8 +334,7 @@ int main(int argc, char** argv)
         mainLoop(mainLoopArg);
 #endif
 
-    txfUnloadFont(txf);
-    glDeleteTextures(1, &fontTextureObj);
+    destroyFontTexture();
 
     return 0;
 }

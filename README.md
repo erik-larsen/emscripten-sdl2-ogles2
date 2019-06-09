@@ -1,10 +1,7 @@
 # emscripten-sdl2-ogles2
 *C++/SDL2/OpenGLES2 to Javascript/WebGL using Emscripten*
 
-This project is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These samples can serve as building blocks to aid in porting C++ graphics apps to the browser.
-
-The long-term goal with this work is to preserve old graphics demos, particularly those developed in the 1990s by Silicon Graphics.  This work is inspired in part by the [preservation of classic arcade games in the browser](https://archive.org/details/internetarcade), which also utilizes Emscripten.
-
+This project is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These samples can serve as building blocks to help create or port C++ graphics apps for the browser.
 
 ## Samples
 
@@ -32,7 +29,7 @@ Demonstrates TrueType text, using SDL to render a string into a texture and appl
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 
-Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad. 
+Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad, as well as rendering of text strings.
 
 ## Motivation
 
@@ -46,4 +43,4 @@ These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, net
 
 ### Why OpenGLES2?  
 
-These demos require GPU accelerated graphics which is WebGL in the browser.  And Emscripten generates WebGL by transpiling OpenGLES 2 code.
+These demos require GPU accelerated graphics. For the browser, this means WebGL.  And the way to get WebGL is to write OpenGLES code for Emscripten to transpile to WebGL.
