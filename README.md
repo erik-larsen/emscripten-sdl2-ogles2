@@ -2,11 +2,9 @@
 *OpenGL to WebGL using Emscripten*
 
 Demonstrates the basics of porting desktop graphics to the web using Emscripten, via a collection of C++/SDL/OpenGL samples.        
-Specifically, code written in C++, SDL2, and OpenGLES2 is transpiled into Javascript and WebGL by Emscripten.
-        
-## Samples
+Specifically, code written in C++, SDL2, and OpenGLES2 is transpiled into Javascript and WebGL by Emscripten ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/src/)).
 
-### [Run Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
+### [Run Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) 
 
 ![Hello Triangle](media/hello_triangle.png)
 
