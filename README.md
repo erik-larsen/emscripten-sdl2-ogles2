@@ -1,8 +1,10 @@
 # emscripten-sdl2-ogles2
-*C++/SDL2/OpenGLES2 to Javascript/WebGL using Emscripten*
-
-This is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  These can serve as building blocks to help create or port C++ graphics apps for the browser.
-
+*OpenGL to WebGL using Emscripten*
+        
+This is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  
+These samples demonstrate the basics of porting desktop graphics apps to the browser.
+Specifically code written in C++, SDL2, and OpenGLES2 code is transpiled into Javascript and WebGL by Emscripten.
+        
 ## Samples
 
 ### [Run Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html)
@@ -29,18 +31,18 @@ Demonstrates TrueType text, using SDL to render a string into a texture and appl
 
 ![Hello Texture Atlas](media/hello_text_txf.png)
 
-Demonstrates Texfont text, loading a font texture atlas from a .txf file and applying it to a quad, as well as rendering of text strings.
+Demonstrates SGI's Texfont text, loading a font texture atlas from a .txf file and applying it to a quad, as well as rendering of text strings.
 
 ## Motivation
 
 ### Why Emscripten?  
 
-Running an app in the browser is the ultimate convenience for the user.  No manual download/install is necessary and the app can run equally well on desktop, tablet, and phone.  Better to have Emscripten do the work to produce optimal Javascript/WASM, than doing the boring and error-prone work of hand porting C++ code.
+Running an app in the browser is the ultimate convenience for the user.  No need to manually install anything, and the app can run equally well on desktop, tablet, and phone.  Emscripten does the work to produce optimal Javascript/WASM, which replaces the manual, boring, and error-prone task of hand porting C++ code.
 
 ### Why SDL2? 
 
-These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.). SDL provides a cross-platform library to access this, and Emscripten supports SDL.
+These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.). SDL provides a cross-platform library to access this.
 
 ### Why OpenGLES2?  
 
-These demos require GPU accelerated graphics. For the browser, this means WebGL.  And the way to get WebGL is to write OpenGLES code for Emscripten to transpile to WebGL.
+WebGL is the way to get GPU-accelerated graphics in the browser, and OpenGLES is the non-web version of OpenGL which most closely matches WebGL.
