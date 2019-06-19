@@ -1,9 +1,8 @@
 # emscripten-sdl2-ogles2
 *OpenGL to WebGL using Emscripten*
-        
-This is a collection of C++/SDL2/OpenGL samples that run in the browser via Emscripten.  
-These samples demonstrate the basics of porting desktop graphics apps to the browser.
-Specifically code written in C++, SDL2, and OpenGLES2 code is transpiled into Javascript and WebGL by Emscripten.
+
+Demonstrates the basics of porting desktop graphics to the web using Emscripten, via a collection of C++/SDL/OpenGL samples.        
+Specifically, code written in C++, SDL2, and OpenGLES2 is transpiled into Javascript and WebGL by Emscripten.
         
 ## Samples
 
@@ -37,7 +36,7 @@ Demonstrates SGI's Texfont text, loading a font texture atlas from a .txf file a
 
 ### Why Emscripten?  
 
-Running an app in the browser is the ultimate convenience for the user.  No need to manually install anything, and the app can run equally well on desktop, tablet, and phone.  Emscripten does the work to produce optimal Javascript/WASM, which replaces the manual, boring, and error-prone task of hand porting C++ code.
+For users, running an app in the browser is the ultimate convenience: nNo need to manually install anything, and the app can run equally well on desktop, tablet, and phone.  For developers, Emscripten does the work to produce optimal Javascript/WASM, replacing the manual, boring, and error-prone process of porting code.
 
 ### Why SDL2? 
 
@@ -45,4 +44,4 @@ These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, net
 
 ### Why OpenGLES2?  
 
-WebGL is the way to get GPU-accelerated graphics in the browser, and OpenGLES is the non-web version of OpenGL which most closely matches WebGL.
+WebGL is the way to get GPU-accelerated graphics in the browser, and OpenGLES is the subset of OpenGL which most closely matches WebGL.
