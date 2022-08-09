@@ -31,14 +31,14 @@ Demonstrates SGI's Texfont text, loading a font texture atlas from a .txf file a
 
 ## Motivation
 
-### Why Emscripten?  
+### Why Emscripten?
 
 For users, running an app in the browser is the ultimate convenience: no need to manually install anything, and the app can run equally well on desktop, tablet, and phone.  For developers, Emscripten does the work to produce optimal Javascript/WASM, replacing the boring and error-prone process of manually porting code.
 
-### Why SDL2? 
+### Why SDL2?
 
 These demos require OS-dependent stuff (keyboard, mouse, touch, text, audio, networking, etc.). SDL provides a cross-platform library to access this.
 
-### Why OpenGLES2?  
+### Why OpenGLES2?
 
 WebGL provides GPU-accelerated graphics in the browser, and OpenGLES is the subset of OpenGL which most closely matches WebGL.
