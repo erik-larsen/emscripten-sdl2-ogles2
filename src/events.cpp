@@ -135,14 +135,12 @@ void EventHandler::processEvents()
             
             case SDL_MOUSEMOTION: 
             {
-﻿﻿            	SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
-            	#ifdef EVENTS_DEBUG
-                	printf ("SDL_MOUSEWHEEL= x,y=%d,%d preciseX,preciseY=%f,%f\n", m->x, m->y, m->preciseX, m->preciseY);
-            	#endif
-            	//bool mouseWheelDown = (m->y < 0);    	// no longer reliable (sometimes y is 0 when mouse wheel up or down)
-            	bool mouseWheelDown = (m->preciseY < 0.0); // so use this instead
-            	zoomEventMouse(mouseWheelDown, mMousePositionX, mMousePositionY);
-            	break;
+                SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
+                mMousePositionX = m->x;
+                mMousePositionY = m->y;
+                if (mMouseButtonDown && !mFingerDown && !mPinch)
+                    panEventMouse(mMousePositionX, mMousePositionY);
+                break;
             }
 
             case SDL_MOUSEBUTTONDOWN: 
