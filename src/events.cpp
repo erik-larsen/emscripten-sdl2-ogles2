@@ -127,10 +127,15 @@ void EventHandler::processEvents()
 
             case SDL_MOUSEWHEEL: 
             {
+                // SDL_MOUSEWHEEL regression? 
+                // m->y no longer reliable (often y is 0 when mouse wheel is spun up or down), use m->preciseY instead
                 SDL_MouseWheelEvent *m = (SDL_MouseWheelEvent*)&event;
-                bool mouseWheelDown = (m->y < 0);
-                zoomEventMouse(mouseWheelDown, mMousePositionX, mMousePositionY);
-                break;
+            	#ifdef EVENTS_DEBUG
+                	printf ("SDL_MOUSEWHEEL= x,y=%d,%d preciseX,preciseY=%f,%f\n", m->x, m->y, m->preciseX, m->preciseY);
+            	#endif
+            	bool mouseWheelDown = (m->preciseY < 0.0);
+            	zoomEventMouse(mouseWheelDown, mMousePositionX, mMousePositionY);
+            	break;
             }
             
             case SDL_MOUSEMOTION: 
