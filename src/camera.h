@@ -9,6 +9,7 @@ class Camera
 public:
     Camera();
     bool updated();
+    bool windowResized();
 
     Rect& windowSize() { return mWindowSize; }
     void setWindowSize (int width, int height);
@@ -37,6 +38,7 @@ private:
     float clamp (float val, float lo, float hi);
 
     bool mCameraUpdated;
+    bool mWindowResized;
     Rect mWindowSize;
     Vec2 mViewport;  
     const GLfloat cZoomMin, cZoomMax;
@@ -46,6 +48,7 @@ private:
 
 inline Camera::Camera()
     : mCameraUpdated (false)
+    , mWindowResized (false)
     , mWindowSize ({})
     , mViewport ({})
     , cZoomMin (0.1f), cZoomMax (10.0f)

@@ -8,20 +8,27 @@
 
 bool Camera::updated()
 {
-    if (mCameraUpdated)
-    {
-        mCameraUpdated = false;
-        return true;
-    }
-    else
-        return false;
+    bool updated = mCameraUpdated;
+    mCameraUpdated = false;
+    return updated;
+}
+
+bool Camera::windowResized()
+{
+    bool resized = mWindowResized;
+    mWindowResized = false;
+    return resized;
 }
 
 void Camera::setWindowSize(int width, int height)
 {
-    mWindowSize = {width, height};
-    mViewport = {(float)width, (float)height};
-    setAspect(width / (float)height);
+    if (mWindowSize.width != width || mWindowSize.height != height)
+    {
+        mWindowResized = true;
+        mWindowSize = {width, height};
+        mViewport = {(float)width, (float)height};
+        setAspect(width / (float)height);
+    }
 }
 
 // Clamp val between lo and hi

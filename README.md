@@ -29,6 +29,13 @@ Demonstrates TrueType text, using SDL to render a string into a texture and appl
 
 Demonstrates SGI's Texfont text, loading a font texture atlas from a .txf file and applying it to a quad, as well as rendering of text strings.
 
+### [Run Hello Image](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_image.html) ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/src/hello_image.cpp))
+
+![Hello Image](media/hello_image.png)
+
+Demonstrates a checkberboard background texture created from an in-memory pixel array.
+
+
 ## Motivation
 
 ### Why Emscripten?
