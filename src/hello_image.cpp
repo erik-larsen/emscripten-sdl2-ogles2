@@ -100,14 +100,6 @@ const GLchar* triFragmentSource =
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
-int nextPowerOfTwo(int val)
-{
-    int power = 1;
-    while (power < val)
-        power *= 2;
-    return power;
-}
-
 void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
@@ -194,6 +186,14 @@ int min(int x, int y)
     return x < y ? x : y;
 }
 
+int nextPowerOfTwo(int val)
+{
+    int power = 1;
+    while (power < val)
+        power *= 2;
+    return power;
+}
+
 void freeTexture()
 {
     // Free existing SDL image and GL texture
@@ -216,9 +216,9 @@ void initTexture(EventHandler& eventHandler)
     // Create background image at size of window
     int winWidth = eventHandler.camera().windowSize().width,
         winHeight = eventHandler.camera().windowSize().height;
-    GLint maxTextureSize = 256;
 
     // Don't exceed max GL texture size
+    GLint maxTextureSize = 256;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     winWidth = min(winWidth, maxTextureSize);
     winHeight = min(winHeight, maxTextureSize);
@@ -255,7 +255,6 @@ void initTexture(EventHandler& eventHandler)
     unsigned int* texPixels = (unsigned int*)bgImageTexture->pixels;
     memset(texPixels, 0x0, bgImageTexture->w * bgImageTexture->h * bgImageTexture->format->BytesPerPixel);
     SDL_Rect destRect = {1, bgImageTexture->h - bgImage->h - 1, bgImage->w + 1, bgImageTexture->h - 1};
-    SDL_SetSurfaceBlendMode(bgImage, SDL_BLENDMODE_NONE);
     SDL_BlitSurface(bgImage, NULL, bgImageTexture, &destRect);
     
     // Build GL texture
