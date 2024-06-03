@@ -3,6 +3,12 @@
 
 Demonstrates the basics of porting desktop graphics to the web using Emscripten, via a collection of code samples. Code is written in C++, SDL2, and OpenGLES2 and transpiled into Javascript and WebGL by Emscripten.
 
+### [Run Hello Triangle Minimal](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle_minimal.html) ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/src/hello_triangle_minimal.cpp))
+
+![Hello Triangle Minimal](media/hello_triangle.png)
+
+Demonstrates a minimal example of a triangle using shaders, with all code in one file.  No user input.
+
 ### [Run Hello Triangle](https://erik-larsen.github.io/emscripten-sdl2-ogles2/hello_triangle.html) ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/src/hello_triangle.cpp))
 
 ![Hello Triangle](media/hello_triangle.png)
