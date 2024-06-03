@@ -100,14 +100,6 @@ const GLchar* triFragmentSource =
     "    gl_FragColor = vec4 ( color, 1.0 );      \n"
     "}                                            \n";
 
-int nextPowerOfTwo(int val)
-{
-    int power = 1;
-    while (power < val)
-        power *= 2;
-    return power;
-}
-
 void updateShader(EventHandler& eventHandler)
 {
     Camera& camera = eventHandler.camera();
@@ -189,102 +181,120 @@ void initGeometry()
     glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);  
  }
 
-void initTexture(EventHandler& eventHandler)
+int min(int x, int y)
 {
+    return x < y ? x : y;
+}
+
+int nextPowerOfTwo(int val)
+{
+    int power = 1;
+    while (power < val)
+        power *= 2;
+    return power;
+}
+
+void freeTexture()
+{
+    // Free existing SDL image and GL texture
     if (bgImageTexture)
     {
         SDL_FreeSurface (bgImageTexture);
         bgImageTexture = nullptr;
     }
+    if (textureObj > 0)
+    {
+        glDeleteTextures(1, &textureObj);
+        textureObj = 0;
+    }
+}
 
-    // Create background image texture
-    int width = eventHandler.camera().windowSize().width,
-        height = eventHandler.camera().windowSize().height,
-        bitsPerPixel = 32;
+void initTexture(EventHandler& eventHandler)
+{
+    freeTexture();
 
-    // TODO: Query max texture size and limit ourselves to that (same aspect as window tho)
-    // Also need to set WASM heap via -s TOTAL_MEMORY
+    // Create background image at size of window
+    int winWidth = eventHandler.camera().windowSize().width,
+        winHeight = eventHandler.camera().windowSize().height;
+
+    // Don't exceed max GL texture size
     //
-    // Framebuffer sizes
+    // Also may need to set WASM heap via -s TOTAL_MEMORY
+    //
+    // Framebuffer sizes:
     // 5120x2880 57MB
     // 3840x2160 32MB
     // 2738x2048 22MB
     // 1920x1080 8MB
     // 1280x1024 5MB
     //
-    // Max texture sizes
-    // iMac x86/Macbook M1 8K
-    // iPhone/iPad 16K
-    // Android phone 4K
-    //
-    GLint maxTextureSize = 0;
+    GLint maxTextureSize = 256;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    printf("maxTextureSize=%d\n", maxTextureSize);
+    int imageWidth = min(winWidth, maxTextureSize),
+        imageHeight = min(winHeight, maxTextureSize);
+    printf("INFO: window size=%dx%d  image size=%dx%d\n", winWidth, winHeight, imageWidth, imageHeight);
 
+    SDL_Surface* bgImage = SDL_CreateRGBSurface(0, imageWidth, imageHeight, bitsPerPixel, 0, 0, 0, 0);
 
-    SDL_Surface* bgImage = SDL_CreateRGBSurface(0, width, height, bitsPerPixel, 0, 0, 0, 0);
     unsigned int* bgImagePixels = (unsigned int*)bgImage->pixels;
     for (int y = 0; y < bgImage->h; ++y)
         for (int x = 0; x < bgImage->w; ++x)
         {
             const int i = x+y*bgImage->w;
             if (y == 0 || x == 0 || y == bgImage->h-1 || x == bgImage->w - 1)
-                bgImagePixels[i] = 0xff00ffff;
+                bgImagePixels[i] = 0xff00ffff; // yellow
             else 
             {
                 const int checkerSize = 100, halfChecker = checkerSize / 2,
                         yMod = y % checkerSize, xMod = x % checkerSize;
-                       
                 if ((yMod < halfChecker && xMod < halfChecker) 
                     || (yMod >= halfChecker && xMod >= halfChecker))
-                    bgImagePixels[i] = 0xffc4c4c4;
+                    bgImagePixels[i] = 0xffc4c4c4; // light grey
                 else
-                    bgImagePixels[i] = 0xff808080;
+                    bgImagePixels[i] = 0xff808080; // dark grey
             }
         }
 
-    // Create power of 2 dimensioned texture for GL with 1 texel border,
-    // clear it, and copy image into it centered
-    bgImageTexture = SDL_CreateRGBSurface(0, // flags (unused)
-                                          nextPowerOfTwo(bgImage->w + 2),      
-                                          nextPowerOfTwo(bgImage->h + 2),      
-                                          bgImage->format->BitsPerPixel, 
-                                          0, 0, 0, 0); // R,G,B,A masks
+    // OpenGLES requires power of 2 dimension textures, so create the smallest
+    // power of 2 image that fits the background image, along with 1 texel border
+    int texWidth = nextPowerOfTwo(bgImage->w + 2),
+        texHeight = nextPowerOfTwo(bgImage->h + 2);
+    bgImageTexture = SDL_CreateRGBSurface(0, texWidth, texHeight, bitsPerPixel, 0, 0, 0, 0);
 
+    // Clear the image and copy the background image into it, centered
     unsigned int* texPixels = (unsigned int*)bgImageTexture->pixels;
     memset(texPixels, 0x0, bgImageTexture->w * bgImageTexture->h * bgImageTexture->format->BytesPerPixel);
     SDL_Rect destRect = {1, bgImageTexture->h - bgImage->h - 1, bgImage->w + 1, bgImageTexture->h - 1};
-    SDL_SetSurfaceBlendMode(bgImage, SDL_BLENDMODE_NONE);
     SDL_BlitSurface(bgImage, NULL, bgImageTexture, &destRect);
-
+    
     // Build GL texture
-    GLint format = (bgImageTexture->format->BitsPerPixel == 32) ? GL_RGBA : -1;
-    if (format != -1)
-    {
-        // Enable blending for texture alpha component
-        glEnable( GL_BLEND );
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    //
 
-        // Generate a GL texture object
-        glGenTextures(1, &textureObj);
+    // Generate a GL texture object and bind it as current
+    glGenTextures(1, &textureObj);
+    glBindTexture(GL_TEXTURE_2D, textureObj);
 
-        // Bind GL texture
-        glBindTexture(GL_TEXTURE_2D, textureObj);
+    // Set the GL texture's wrapping and stretching properties
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        // Set the GL texture's wrapping and stretching properties
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Upload SDL image to GL texture
+    GLint level = 0, border = 0;
+    glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, 
+                 bgImageTexture->w, bgImageTexture->h, 
+                 border, GL_RGBA, GL_UNSIGNED_BYTE, bgImageTexture->pixels);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // Check for errors
+    GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR)
+        printf("ERROR: Texture %d (%dx%d) not built, error code %d\n", textureObj, bgImageTexture->w, bgImageTexture->h, glError);
+    else
+        printf("OK: Texture %d (%dx%d) built.\n", textureObj, bgImageTexture->w, bgImageTexture->h);
 
-        // Copy SDL surface image to GL texture
-        glTexImage2D(GL_TEXTURE_2D, 0, format, 
-                     bgImageTexture->w, bgImageTexture->h, 
-                     0, format, GL_UNSIGNED_BYTE, bgImageTexture->pixels);
-        
-        glBindTexture(GL_TEXTURE_2D, 0);
-    } 
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     // Update quad shader
     imageSize[0] = (GLfloat)bgImage->w + 2;
@@ -293,11 +303,14 @@ void initTexture(EventHandler& eventHandler)
     texSize[1] = (GLfloat)bgImageTexture->h;
     updateShader(eventHandler);
 
-    SDL_FreeSurface (bgImage);        
+    SDL_FreeSurface (bgImage); 
 }
 
 void redraw(EventHandler& eventHandler)
 {
+    //static int frameCt = 0;
+    //printf("INFO: frame %d\n", frameCt++);
+
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -356,9 +369,6 @@ int main(int argc, char** argv)
         mainLoop(mainLoopArg);
 #endif
 
-    if (bgImageTexture)
-        SDL_FreeSurface (bgImageTexture);
-    glDeleteTextures(1, &textureObj);
-
+    freeTexture();
     return 0;
 }
