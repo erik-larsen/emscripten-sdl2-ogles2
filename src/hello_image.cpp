@@ -215,7 +215,8 @@ void initTexture(EventHandler& eventHandler)
 
     // Create background image at size of window
     int winWidth = eventHandler.camera().windowSize().width,
-        winHeight = eventHandler.camera().windowSize().height;
+        winHeight = eventHandler.camera().windowSize().height,
+        bitsPerPixel = 32;
 
     // Don't exceed max GL texture size
     //
