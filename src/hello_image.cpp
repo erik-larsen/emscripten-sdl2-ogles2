@@ -201,6 +201,27 @@ void initTexture(EventHandler& eventHandler)
     int width = eventHandler.camera().windowSize().width,
         height = eventHandler.camera().windowSize().height,
         bitsPerPixel = 32;
+
+    // TODO: Query max texture size and limit ourselves to that (same aspect as window tho)
+    // Also need to set WASM heap via -s TOTAL_MEMORY
+    //
+    // Framebuffer sizes
+    // 5120x2880 57MB
+    // 3840x2160 32MB
+    // 2738x2048 22MB
+    // 1920x1080 8MB
+    // 1280x1024 5MB
+    //
+    // Max texture sizes
+    // iMac x86/Macbook M1 8K
+    // iPhone/iPad 16K
+    // Android phone 4K
+    //
+    GLint maxTextureSize = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    printf("maxTextureSize=%d\n", maxTextureSize);
+
+
     SDL_Surface* bgImage = SDL_CreateRGBSurface(0, width, height, bitsPerPixel, 0, 0, 0, 0);
     unsigned int* bgImagePixels = (unsigned int*)bgImage->pixels;
     for (int y = 0; y < bgImage->h; ++y)
