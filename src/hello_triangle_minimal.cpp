@@ -83,7 +83,7 @@ void initGeometry(GLuint shaderProgram)
 
 void mainLoop(void* mainLoopArg) 
 {
-    SDL_Window* mpWindow = (SDL_Window*)mainLoopArg;
+    SDL_Window* pWindow = (SDL_Window*)mainLoopArg;
 
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
@@ -92,7 +92,7 @@ void mainLoop(void* mainLoopArg)
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     // Swap front/back framebuffers
-    SDL_GL_SwapWindow(mpWindow);
+    SDL_GL_SwapWindow(pWindow);
 }
 
 int main(int argc, char** argv)
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     int winWidth = 512, winHeight = 512;
 
     // Create SDL window
-    SDL_Window *mpWindow = 
+    SDL_Window *pWindow = 
         SDL_CreateWindow("Hello Triangle Minimal", 
                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                          winWidth, winHeight, 
@@ -112,19 +112,23 @@ int main(int argc, char** argv)
     SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GLContext glc = SDL_GL_CreateContext(mpWindow);
+    SDL_GLContext glc = SDL_GL_CreateContext(pWindow);
+    printf("INFO: GL version: %s\n", glGetString(GL_VERSION));
 
     // Set clear color to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     
-    glViewport(0, 0, winWidth, winHeight);
+    // Get actual GL window size in pixels, in case of high dpi scaling
+    SDL_GL_GetDrawableSize(pWindow, &winWidth, &winHeight);
+    printf("INFO: GL window size = %dx%d\n", winWidth, winHeight);
+    glViewport(0, 0, winWidth, winHeight);   
 
     // Initialize shader and geometry
     GLuint shaderProgram = initShader();
     initGeometry(shaderProgram);
 
     // Start the main loop
-    void* mainLoopArg = mpWindow;
+    void* mainLoopArg = pWindow;
 
 #ifdef __EMSCRIPTEN__
     int fps = 0; // Use browser's requestAnimationFrame
