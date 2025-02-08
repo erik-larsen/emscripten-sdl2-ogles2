@@ -83,7 +83,11 @@ void initGeometry(GLuint shaderProgram)
 
 void mainLoop(void* mainLoopArg) 
 {
+    // Resize on every frame for brevity, normally resizing is done on resize event
     SDL_Window* pWindow = (SDL_Window*)mainLoopArg;
+    int winWidth, winHeight;
+    SDL_GL_GetDrawableSize(pWindow, &winWidth, &winHeight);
+    glViewport(0, 0, winWidth, winHeight);   
 
     // Clear screen
     glClear(GL_COLOR_BUFFER_BIT);
