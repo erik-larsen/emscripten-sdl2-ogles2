@@ -5,7 +5,7 @@
 //     Install emscripten: http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
 //
 // Build:
-//     emcc -std=c++11 hello_image.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s FULL_ES2=1 -s WASM=1 -o ../hello_image.js
+//     emcc -std=c++11 hello_image.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s FULL_ES2=1 -s WASM=1 -o ../hello_image.html
 // 
 // Run:
 //     emrun hello_image.html
