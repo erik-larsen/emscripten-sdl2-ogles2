@@ -41,6 +41,17 @@ Demonstrates SGI's Texfont text, loading a font texture atlas from a .txf file a
 
 Demonstrates a checkberboard background texture created from an in-memory pixel array.
 
+### [Run Hello 3D](https://erik-larsen.github.io/emscripten-sdl2-ogles2/web/hello_3d.html) ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/hello_3d.cpp))
+
+![Hello 3D](media/hello_3d.png)
+
+Demonstrates 3D view manipulation using the Stanford bunny, shaded with the same rainbow shader as Hello Triangle, combined with hidden line rendering using barycentric coordinates to shade triangle edges white.
+
+ * Orbit using left mouse or one finger drag.
+ * Zoom using mouse wheel or two finger pinch.
+ * Pan using right mouse
+ * Reset the view with the R key
+
 
 ## Motivation
 

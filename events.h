@@ -2,11 +2,12 @@
 // Window and input event handling
 //
 #include "camera.h"
+typedef enum { MANIP_2D, MANIP_3D } ManipMode;
 
 class EventHandler
 {
 public:
-    EventHandler(const char* windowTitle);
+    EventHandler(const char* windowTitle, ManipMode manipMode = MANIP_2D);
 
     void processEvents();
     Camera& camera() { return mCamera; }
@@ -16,6 +17,9 @@ private:
     // Camera
     Camera mCamera;
 
+    // Manipulator mode
+    ManipMode mManipMode;
+
     // Window
     SDL_Window* mpWindow;
     Uint32 mWindowID;
@@ -24,8 +28,8 @@ private:
 
     // Mouse input
     const float cMouseWheelZoomDelta;
-    bool mMouseButtonDown;
-    int mMouseButtonDownX, mMouseButtonDownY;
+    bool mPanMouseButtonDown;
+    int mPanMouseButtonDownX, mPanMouseButtonDownY;
     int mMousePositionX, mMousePositionY;
 
     // Finger input
@@ -42,17 +46,21 @@ private:
     void zoomEventPinch (float pinchDist, float pinchX, float pinchY);
     void panEventMouse(int x, int y);
     void panEventFinger(float x, float y);
+    void orbitEventFinger(float x, float y);
 };
 
-inline EventHandler::EventHandler(const char* windowTitle)
+inline EventHandler::EventHandler(const char* windowTitle, ManipMode manipMode)
     // Window
     : mpWindow (nullptr)
     , mWindowID (0)
- 
+
+    // Manipulator mode
+    , mManipMode (manipMode)
+
     // Mouse input
     , cMouseWheelZoomDelta (0.05f)
-    , mMouseButtonDown (false)
-    , mMouseButtonDownX (0), mMouseButtonDownY (0)
+    , mPanMouseButtonDown (false)
+    , mPanMouseButtonDownX (0), mPanMouseButtonDownY (0)
     , mMousePositionX (0), mMousePositionY (0)
 
     // Finger input

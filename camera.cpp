@@ -13,6 +13,14 @@ bool Camera::updated()
     return updated;
 }
 
+void Camera::reset()
+{
+    mat4x4_identity(mOrbitMat);
+    mPan = { 0.0f, 0.0f };
+    mZoom = 1.0f;
+    mCameraUpdated = true;
+}
+
 bool Camera::windowResized()
 {
     bool resized = mWindowResized;
@@ -32,9 +40,9 @@ void Camera::setWindowSize(int width, int height)
 }
 
 // Clamp val between lo and hi
-float Camera::clamp (float val, float lo, float hi) 
-{ 
-    return std::max(lo, std::min(val, hi)); 
+float Camera::clamp (float val, float lo, float hi)
+{
+    return std::max(lo, std::min(val, hi));
 }
 
 // Convert from normalized window coords (x,y) in ([0.0, 1.0], [1.0, 0.0]) to device coords ([-1.0, 1.0], [-1.0,1.0])
@@ -61,7 +69,7 @@ void Camera::deviceToWorldCoords (float deviceX, float deviceY, float& worldX, f
 void Camera::windowToWorldCoords(int winX, int winY, float& worldX, float& worldY)
 {
     float deviceX, deviceY;
-    windowToDeviceCoords(winX, winY, deviceX, deviceY);   
+    windowToDeviceCoords(winX, winY, deviceX, deviceY);
     deviceToWorldCoords(deviceX, deviceY, worldX, worldY);
 }
 
@@ -71,4 +79,52 @@ void Camera::normWindowToWorldCoords(float normWinX, float normWinY, float& worl
     float deviceX, deviceY;
     normWindowToDeviceCoords(normWinX, normWinY, deviceX, deviceY);
     deviceToWorldCoords(deviceX, deviceY, worldX, worldY);
+}
+
+// Build a perspective model-view-projection matrix from pan, zoom, orbit, and aspect.
+// Mirrors the 2D samples' vertex shader transform, clip = (position + pan) * zoom,
+// so the shared pan/zoom event handling behaves the same in 3D:
+// view = translate(-distance) * scale(zoom) * translate(pan) * orbit
+void Camera::modelViewProj (mat4x4 mvp)
+{
+    mat4x4 projMat;
+    mat4x4_perspective(projMat, cFov, mAspect, cNear, cFar);
+
+    // Scale pan from device coords to world units on the view plane at the orbit
+    // center, so panning tracks the mouse/finger exactly, as in the 2D samples
+    float panScale = cDistance * mAspect * tanf(cFov * 0.5f);
+
+    mat4x4 viewMat;
+    mat4x4_identity(viewMat);
+    mat4x4_translate_in_place(viewMat, 0.0f, 0.0f, -cDistance);
+
+    mat4x4 scaleMat;
+    mat4x4_identity(scaleMat);
+    mat4x4_scale_iso(scaleMat, scaleMat, mZoom);
+    mat4x4_mul(viewMat, viewMat, scaleMat);
+
+    mat4x4_translate_in_place(viewMat, mPan.x * panScale, mPan.y * panScale, 0.0f);
+
+    mat4x4_mul(viewMat, viewMat, mOrbitMat);
+    mat4x4_mul(mvp, projMat, viewMat);
+}
+
+// Orbit the camera by an xy pixel delta
+void Camera::setOrbitDelta (float dxPixels, float dyPixels)
+{
+    vec2 dragStart = { 0.0f, 0.0f };
+    vec2 dragVec = { dxPixels * cOrbitSensitivity, -dyPixels * cOrbitSensitivity };
+
+    mat4x4 identityMat;
+    mat4x4_identity(identityMat);
+
+    mat4x4 deltaRot;
+    mat4x4_arcball(deltaRot, identityMat, dragStart, dragVec, 1.0f);
+
+    // Pre-multiply so the orbit is relative to the screen, not the model
+    mat4x4 newRot;
+    mat4x4_mul(newRot, deltaRot, mOrbitMat);
+    mat4x4_dup(mOrbitMat, newRot);
+
+    mCameraUpdated = true;
 }

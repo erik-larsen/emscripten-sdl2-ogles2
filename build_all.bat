@@ -5,3 +5,4 @@ call emcc -std=c++11 hello_texture.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE
 call emcc -std=c++11 hello_text_ttf.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_TTF=2 -s FULL_ES2=1 -s WASM=1 --preload-file media/LiberationSansBold.ttf -o web\hello_text_ttf.js
 call emcc -std=c++11 hello_text_txf.cpp events.cpp camera.cpp texfont.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=1 --preload-file media/rockfont.txf -o web\hello_text_txf.js
 call emcc -std=c++11 hello_image.cpp events.cpp camera.cpp -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s FULL_ES2=1 -s WASM=1 -o web\hello_image.js
+call emcc -std=c++11 hello_3d.cpp events.cpp camera.cpp -s USE_SDL=2 -s FULL_ES2=1 -s WASM=1 -o web\hello_3d.js
