@@ -68,7 +68,7 @@ const GLchar* fragmentSource =
     "    float nearestEdge = min(min(edgeDist.x, edgeDist.y), edgeDist.z);  \n"
     "                                                                       \n"
     "    // Blend from the rainbow interior to a white edge                 \n"
-    "    float edge = 1.0 - smoothstep(0.5, 1.5, nearestEdge);              \n"
+    "    float edge = 1.0 - smoothstep(0.25, 0.75, nearestEdge);            \n"
     "    vec3 rgb = mix(color, vec3(1.0), edge);                            \n"
     "    gl_FragColor = vec4(rgb, 1.0);                                     \n"
     "}                                                                      \n";
