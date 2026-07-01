@@ -60,7 +60,6 @@ const GLchar* fragmentSource =
     "precision mediump float;                                               \n"
     "varying vec3 color;                                                    \n"
     "varying vec3 bary;                                                     \n"
-    "const float edgeWidth = 0.02;                                          \n"
     "void main()                                                            \n"
     "{                                                                      \n"
     "    // Distance to nearest edge in pixels, via screen-space derivatives\n"
