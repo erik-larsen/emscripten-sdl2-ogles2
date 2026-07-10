@@ -27,7 +27,7 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpmwngcvdn.js
+// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpyjwmzytb.js
 
   Module['expectedDataFileDownloads'] ??= 0;
   Module['expectedDataFileDownloads']++;
@@ -208,21 +208,21 @@ Module['FS_createPath']("/", "media", true, true);
 
   })();
 
-// end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpmwngcvdn.js
-// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpid0t2qxx.js
+// end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpyjwmzytb.js
+// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpv4i2hrqi.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpid0t2qxx.js
-// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpoiux06m5.js
+  // end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpv4i2hrqi.js
+// include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmp89w8_50i.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmpoiux06m5.js
+  // end include: /var/folders/7y/v1yzr63d61sdmkfs6rvh_g7m0000gq/T/tmp89w8_50i.js
 
 
 var arguments_ = [];
