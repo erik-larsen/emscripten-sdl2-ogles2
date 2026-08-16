@@ -1,7 +1,7 @@
 # [emscripten-sdl2-ogles2](https://erik-larsen.github.io)
 *OpenGL to WebGL using Emscripten*
 
-Demonstrates the basics of porting desktop graphics to the web using Emscripten, via a collection of code samples. Code is written in C++, SDL2, and OpenGLES2 and transpiled into Javascript and WebGL by Emscripten.
+Demonstrates the basics of porting desktop graphics to the web using Emscripten, via a collection of code samples. Code is written in C++, SDL2, and OpenGLES2 and cross-compiled into Javascript and WebGL by Emscripten.
 
 ### [Run Hello Triangle Minimal](https://erik-larsen.github.io/emscripten-sdl2-ogles2/web/hello_triangle_min.html) ([source](https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/hello_triangle_min.cpp))
 
