@@ -1,30 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="chrome=1, IE=edge">
-        <title>Hello 3D</title>
-        <style>
-            .fullwindow {
-                position: absolute;
-                top: 0px;
-                left: 0px;
-                margin: 0px;
-                border: 0;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-                display: block;
-            }
-        </style>
-    </head>
-    <body style="background-color: #FFFFFF;">
-        <canvas class = "fullwindow" id="canvas" oncontextmenu="event.preventDefault()"/>
-        <script type="text/javascript">
-            var Module = {};
-            Module.canvas = document.getElementById('canvas');
-        </script>
-        <script async type="text/javascript" src="./hello_3d.js"></script>
-    </body>
-</html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello 3D</title>
+<style>
+  :root {
+    --ink:    #e8e6df;
+    --muted:  #8b8f98;
+    --accent: #e0a458;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #000;
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden;
+  }
 
+  /* Full-window render target; the canvas must have no border or padding,
+     or mouse coords will be wrong. */
+  canvas#canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+  }
+
+  /* Header/footer float on top of the canvas. Text stays readable over
+     arbitrary content via gradient scrims, and the bars are click-through
+     (pointer-events) so they never steal drag/wheel input — only the
+     source link re-enables hit testing. */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 2;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px 28px;
+    background: linear-gradient(rgba(13, 15, 19, .82), rgba(13, 15, 19, 0));
+    pointer-events: none;
+  }
+  header h1 {
+    font-size: 14px;
+    color: #fff;
+  }
+  header p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    padding: 28px 20px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    background: linear-gradient(rgba(13, 15, 19, 0), rgba(13, 15, 19, .82));
+    pointer-events: none;
+  }
+  footer b { color: var(--ink); font-weight: 600; }
+  footer a { color: var(--accent); text-decoration: none; pointer-events: auto; }
+  footer a:hover, footer a:focus-visible { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hello 3D</h1>
+  <p>Stanford bunny with rainbow shading and barycentric hidden lines</p>
+</header>
+
+<canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+<footer>
+  <span><b>orbit</b> left mouse / finger</span>
+  <span><b>pan</b> right mouse</span>
+  <span><b>zoom</b> wheel / pinch</span>
+  <span><b>reset</b> R</span>
+  <span style="margin-left:auto"><a href="https://github.com/erik-larsen/emscripten-sdl2-ogles2/blob/master/hello_3d.cpp">source</a></span>
+</footer>
+
+<script>
+  var Module = { canvas: document.getElementById('canvas') };
+</script>
+<script async src="./hello_3d.js"></script>
+</body>
+</html>
